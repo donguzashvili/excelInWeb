@@ -16,27 +16,80 @@ function fetchData(url) {
 }
 
 function styleHtml() {
+  //create footer and header
   const header = document.createElement("header");
   const footer = document.createElement("footer");
 
   const dataTableWrapper = document.getElementById("myTable_wrapper");
   const dataTableLength = document.getElementById("myTable_length");
-
   const dataTableFilter = document.getElementById("myTable_filter");
   const dataTablePaginate = document.getElementById("myTable_paginate");
   const dataTableInfo = document.getElementById("myTable_info");
 
+  //append elements to footer and header
   header.append(dataTableLength);
   header.append(dataTableFilter);
-
   footer.classList.add("dataTables_wrapper");
   footer.append(dataTableInfo);
   footer.append(dataTablePaginate);
-
   dataTableWrapper.prepend(header);
   document.body.append(footer);
+  scroll();
+  fixedHeader();
+}
+function scroll() {
+  const ele = document.getElementById("myTable_wrapper");
+  ele.scrollTop = 100;
+  ele.scrollLeft = 150;
+
+  let pos = { top: 0, left: 0, x: 0, y: 0 };
+
+  const mouseDownHandler = function (e) {
+    pos = {
+      // The current scroll
+      left: ele.scrollLeft,
+      top: ele.scrollTop,
+      // Get the current mouse position
+      x: e.clientX,
+      y: e.clientY,
+    };
+  };
+  const mouseMoveHandler = function (e) {
+    // How far the mouse has been moved
+    const dx = e.clientX - pos.x;
+    const dy = e.clientY - pos.y;
+
+    // Scroll the element
+    ele.scrollTop = pos.top - dy;
+    ele.scrollLeft = pos.left - dx;
+  };
+
+  const mouseUpHandler = function () {
+    ele.style.cursor = "grap";
+    ele.style.removeProperty("user-select");
+  };
+
+  document.addEventListener("mousemove", mouseMoveHandler);
+  ele.addEventListener("mousedown", mouseDownHandler);
+  ele.addEventListener("mouseup", mouseUpHandler);
 }
 
+function fixedHeader() {
+  //take tables offset and tableHead
+  let table = document.getElementById("myTable");
+  let tHead = document.getElementsByTagName("thead");
+
+  //on scroll move header with content like a position fixed
+  $(window).bind("scroll", function () {
+    let offset = $(this).scrollTop();
+    if (offset >= table.offsetTop) {
+      let position = offset - 45;
+      tHead[0].style.cssText = "transform: translateY(" + position + "px)";
+    } else if (offset < table.offsetTop) {
+      tHead[0].style.cssText = "transform: translateY(-45px)";
+    }
+  });
+}
 let tHeadID = 0;
 
 function objectCreate(data) {
@@ -69,6 +122,7 @@ function renderCustomer(array) {
   const table = $("#myTable").DataTable({
     regex: true,
     data: array,
+
     columns: [
       {
         data: "id",
