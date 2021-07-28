@@ -4,6 +4,7 @@ let search = [];
 let regex = "";
 let columnNum = 0;
 let id = 15;
+let table = null;
 
 function fetchData(url) {
   try {
@@ -37,42 +38,7 @@ function styleHtml() {
   scroll();
   fixedHeader();
 }
-function scroll() {
-  const ele = document.getElementById("myTable_wrapper");
-  ele.scrollTop = 100;
-  ele.scrollLeft = 150;
-
-  let pos = { top: 0, left: 0, x: 0, y: 0 };
-
-  const mouseDownHandler = function (e) {
-    pos = {
-      // The current scroll
-      left: ele.scrollLeft,
-      top: ele.scrollTop,
-      // Get the current mouse position
-      x: e.clientX,
-      y: e.clientY,
-    };
-  };
-  const mouseMoveHandler = function (e) {
-    // How far the mouse has been moved
-    const dx = e.clientX - pos.x;
-    const dy = e.clientY - pos.y;
-
-    // Scroll the element
-    ele.scrollTop = pos.top - dy;
-    ele.scrollLeft = pos.left - dx;
-  };
-
-  const mouseUpHandler = function () {
-    ele.style.cursor = "grap";
-    ele.style.removeProperty("user-select");
-  };
-
-  document.addEventListener("mousemove", mouseMoveHandler);
-  ele.addEventListener("mousedown", mouseDownHandler);
-  ele.addEventListener("mouseup", mouseUpHandler);
-}
+function scroll() {}
 
 function fixedHeader() {
   //take tables offset and tableHead
@@ -119,10 +85,10 @@ function objectCreate(data) {
 }
 
 function renderCustomer(array) {
-  const table = $("#myTable").DataTable({
+  const dataTable = $("#myTable").DataTable({
+    autoWidth: false,
     regex: true,
     data: array,
-
     columns: [
       {
         data: "id",
@@ -184,11 +150,6 @@ function renderCustomer(array) {
         " >" +
         title +
         "" +
-        '<input id="' +
-        title +
-        '" type="text" placeholder="Search ' +
-        title +
-        '"/>' +
         "</label>" +
         "<form>" +
         '  <div class="multiselect">' +
@@ -201,6 +162,8 @@ function renderCustomer(array) {
         ' class="overSelect"  onclick="handleCheckBox(event)"></div>' +
         "    </div>" +
         '    <div class="checkboxes">' +
+        `<input type=text class="indSearch" placeholder="search by ${title}" oninput=individualSearch()>` +
+        '<div class="checkboxesContainer"></div>' +
         "    </div>\n" +
         "  </div>\n" +
         "</form>" +
@@ -208,13 +171,15 @@ function renderCustomer(array) {
     );
     tHeadID++;
 
-    table.columns().every(function () {
+    dataTable.columns().every(function () {
       const column = this;
-      $("input", this.header()).on("keyup change", function () {
+
+      $(".indSearch").on("keyup change", function () {
         column.search(this.value).draw();
       });
     });
   });
+  table = dataTable;
   selectSearch(table);
   styleHtml();
 }
@@ -226,18 +191,23 @@ const handleCheckBox = (e) => {
   e.target.parentNode.parentNode.children[1].classList.toggle("open");
 };
 
-function selectSearch(table) {
+function selectSearch() {
   let columnId = 0;
   const columnsData = table.columns().data();
-  const checkboxes = $(".checkboxes");
+  const checkboxes = $(".checkboxesContainer");
+  let uniqueData;
   for (let i = 0; i < columnsData.length; i++) {
-    let checkedInputs = ``;
-    for (let j = 0; j < columnsData[i].length; j++) {
+    uniqueData = columnsData[i].filter((v, i, a) => a.indexOf(v) === i);
+    sortedData = uniqueData.sort((a, b) => {
+      return a - b;
+    });
+    let checkedInputs = "";
+    for (let j = 0; j < uniqueData.length; j++) {
       checkedInputs += ` <label for=${id++}>
                         <input type="checkbox" id= ${id++ - 1} value= ${
-        columnsData[i][j]
+        sortedData[j]
       } />
-                         ${columnsData[i][j]}
+                         ${sortedData[j]}
                         </label>`;
     }
     checkboxes[i].innerHTML = checkedInputs;
@@ -247,7 +217,9 @@ function selectSearch(table) {
   checkBox.each(function () {
     $(this).on("keyup change", function (e) {
       columnId =
-        e.target.parentNode.parentNode.previousElementSibling.children[1].id;
+        e.target.parentNode.parentNode.parentNode.previousElementSibling
+          .children[1].id;
+
       regex = "";
       if (this.checked) {
         search.push($(this).val());
@@ -258,6 +230,11 @@ function selectSearch(table) {
         table.column(columnId).every(function () {
           const column = this;
           column.search(regex, true, false).draw();
+        });
+      } else if (!this.checked) {
+        table.column(columnId).every(function () {
+          const column = this;
+          column.search("").draw();
         });
       } else {
         let index = search.indexOf($(this).val());
@@ -270,6 +247,39 @@ function selectSearch(table) {
       }
     });
   });
+}
+function individualSearch() {
+  $(".indSearch").on("input", function (e) {
+    columnId = e.target.parentNode.parentNode.children[0].children[1].id;
+
+    let container = e.target.parentNode.children[1];
+    let newValue = this.value;
+
+    searchData(columnId, container, newValue);
+  });
+}
+
+function searchData(id, container, value) {
+  let data = table.column(id).data();
+  let checkedInputs = "";
+  let uniqueData = data.filter((v, i, a) => a.indexOf(v) === i);
+  let sortedData = uniqueData.sort((a, b) => {
+    return a - b;
+  });
+  sortedData.map((item) => {
+    if (item.startsWith(value)) {
+      checkedInputs += ` <label for=${id++}>
+                        <input type="checkbox" id= ${id++ - 1} value= ${item} />
+                         ${item}
+                        </label>`;
+    } else if (value === "") {
+      checkedInputs += ` <label for=${id++}>
+                        <input type="checkbox" id= ${id++ - 1} value= ${item} />
+                         ${item}
+                        </label>`;
+    }
+  });
+  container.innerHTML = checkedInputs;
 }
 
 document.addEventListener("DOMContentLoaded", () => fetchData(URL));

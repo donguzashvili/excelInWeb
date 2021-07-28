@@ -4,7 +4,7 @@
 }
 
 body {
-  overflow-x: hidden;
+  overflow: hidden;
 }
 html,
 body,
@@ -14,6 +14,9 @@ dataTables_wrapper {
 
 input[type="text"] {
   margin: 0.5rem 0;
+}
+form {
+  min-width: 200px;
 }
 
 label {
@@ -29,7 +32,7 @@ tbody td {
   height: 100%;
   display: flex;
   flex-flow: column;
-  justify-content: space-around;
+  justify-content: center;
 }
 
 .sorting {
@@ -47,6 +50,7 @@ tbody td {
 .selectBox select {
   width: 100%;
   font-weight: bold;
+  min-width: 178px;
 }
 
 .overSelect {
@@ -55,6 +59,9 @@ tbody td {
   right: 0;
   top: 0;
   bottom: 0;
+}
+.indSearch {
+  width: 150px;
 }
 
 .checkboxes {
@@ -95,7 +102,7 @@ tbody td {
 .dataTables_wrapper {
   width: 100%;
   overflow: scroll;
-  cursor: grab;
+  max-height: 92vh;
 }
 .dataTables_wrapper header {
   position: fixed;
