@@ -1,6 +1,5 @@
 * {
   box-sizing: border-box;
-  user-select: none;
 }
 
 body {
@@ -10,6 +9,17 @@ html,
 body,
 dataTables_wrapper {
   height: 100%;
+}
+.summeryHeader {
+  margin: 0 0 10px;
+  border-bottom: 1px solid black;
+}
+.summeryData {
+  margin-bottom: 0;
+}
+
+p {
+  margin: 8px 0;
 }
 
 input[type="text"] {
@@ -102,7 +112,6 @@ tbody td {
 .dataTables_wrapper {
   width: 100%;
   overflow: scroll;
-  max-height: 92vh;
 }
 .dataTables_wrapper header {
   position: fixed;
@@ -110,7 +119,7 @@ tbody td {
   width: 100%;
   top: 0;
   z-index: 99999;
-  padding: 0.5rem 1rem;
+  padding: 1.5rem 1rem;
   border-bottom: 1px solid #000000;
 }
 .dataTables_filter label {
@@ -118,7 +127,16 @@ tbody td {
   align-items: center;
 }
 table {
-  margin: 5rem 0 2rem !important;
+  margin: 5rem 0 0 !important;
+}
+#myTable_wrapper {
+  min-height: 53vh;
+  max-height: 92vh;
+}
+.grandTotal {
+  border-left: 1px solid black;
+  border-right: 1px solid black;
+  padding: 5px !important;
 }
 
 /* #header-fixed { 
@@ -136,12 +154,12 @@ thead {
   top: 44px; */
   z-index: 999;
   background-color: white;
-  transform: translateY(-45px);
+  transform: translateY(-12px);
 }
 
 tbody {
   position: relative;
-  top: -45px;
+
   z-index: -1;
 }
 td {
