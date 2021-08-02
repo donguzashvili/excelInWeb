@@ -185,14 +185,47 @@ function renderCustomer(array) {
   table = dataTable;
   selectSearch(table);
   styleHtml();
+  contentLength();
+  syleMainSearch();
+  calcItems();
 }
 
 const handleCheckBox = (e) => {
+  e.stopPropagation();
   columnNum = e.target.id;
   regex = "";
   search = [];
   e.target.parentNode.parentNode.children[1].classList.toggle("open");
 };
+
+function syleMainSearch() {
+  let searchInput =
+    document.getElementById("myTable_filter").children[0].children[0];
+  searchInput.setAttribute("placeholder", "Search for any data");
+}
+
+window.addEventListener("click", () => {
+  let open = document.getElementsByClassName("checkboxes");
+
+  for (let i = 0; i < open.length; i++) {
+    open[i].addEventListener("click", function (e) {
+      e.stopPropagation();
+    });
+    if (open[i].classList.contains("open")) {
+      open[i].classList.remove("open");
+    }
+  }
+});
+
+function contentLength() {
+  let select = document.getElementsByTagName("select")[0];
+  let input =
+    document.getElementsByClassName("dataTables_filter")[0].children[0]
+      .children[0];
+  select.addEventListener("change", calcVisibleData);
+
+  input.addEventListener("input", calcVisibleData);
+}
 
 function selectSearch() {
   let columnId = 0;
@@ -270,6 +303,8 @@ function selectSearch() {
 //     }
 //   });
 // }
+
+function calcItems() {}
 function calcVisibleData() {
   let tableRow = document.getElementsByTagName("tr");
   let container = document.getElementsByClassName("visibleData");
@@ -306,8 +341,6 @@ function calcVisibleData() {
     }
   }
   for (let i = 0; i < container.length; i++) {
-    console.log(container[i].innerHTML);
-
     if (container[i].innerHTML === "") {
       container[i].innerHTML = `Current Data: No Data`;
     } else if (container[i].innerHTML === "Current Data: No Data") {
@@ -315,7 +348,38 @@ function calcVisibleData() {
     } else if (container[i].innerHTML === "Current Data: 0") {
       container[i].innerHTML === "Current Data: No Data";
     } else {
-      container[i].innerHTML = `Current Data: ${container[i].innerHTML}`;
+      //dasamtavrebelia
+      let reversedStr = container[i].innerHTML.split("").reverse().join("");
+      let string = reversedStr.replace(/(...?)/g, "$1 ").slice(0, -1);
+      let originalString = reversedStr.split("").reverse().join("");
+      if (originalString.slice(-1) === ",") {
+        let correctStr = string.slice(0, -1);
+        container[i].innerHTML = `Current Data: ${correctStr}`;
+      } else {
+        container[i].innerHTML = `Current Data: ${originalString}`;
+      }
+    }
+  }
+
+  let td = document.getElementsByTagName("td");
+  for (let i = 0; i < td.length; i++) {
+    if (td[i].innerHTML.length > 20) {
+      let storedData = td[i].innerHTML;
+      let sliced = td[i].textContent.slice(20, td[i].textContent.length);
+      let res;
+      if (sliced.slice(-1) === " ") {
+        let space = sliced.slice(-1);
+        res = td[i].textContent.replace(space, "...");
+      } else {
+        res = td[i].textContent.replace(sliced, "...");
+      }
+      td[i].innerHTML = res;
+
+      let span = document.createElement("span");
+      td[i].appendChild(span);
+      td[i].classList.add("hiddenDataTd");
+      span.classList.add("fullData");
+      span.innerHTML = storedData;
     }
   }
 }
@@ -338,7 +402,7 @@ function searchData(id, container, value) {
     return a - b;
   });
   sortedData.map((item) => {
-    if (item.startsWith(value)) {
+    if (item.startsWith(value.toUpperCase())) {
       checkedInputs += ` <label for=${id++}>
                         <input type="checkbox" id= ${id++ - 1} value= ${item} />
                          ${item}
@@ -357,7 +421,7 @@ function styleHtml() {
   //create footer and header
   const header = document.createElement("header");
   const footer = document.createElement("footer");
-
+  header.classList.add("searchHeader");
   const dataTableWrapper = document.getElementById("myTable_wrapper");
   const dataTableLength = document.getElementById("myTable_length");
   const dataTableFilter = document.getElementById("myTable_filter");
@@ -372,7 +436,6 @@ function styleHtml() {
   // const thLength = document.getElementsByTagName("th");
 
   //summery row
-  let data = table.columns().data();
   for (let i = 0; i < 13; i++) {
     let th = document.createElement("th");
     th.classList.add("grandTotal");
@@ -390,40 +453,11 @@ function styleHtml() {
     summeryData.classList.add("summeryData");
     visibleData.classList.add("visibleData");
   }
+  let current = document.getElementsByClassName("paginate_button");
+  for (let i = 0; i < current.length; i++) {
+    current[i].addEventListener("click", calcVisibleData);
+  }
   totalData();
-
-  let td = document.getElementsByTagName("td");
-  for (let i = 0; i < td.length; i++) {
-    if (td[i].innerHTML.length > 15) {
-      let storedData = td[i].innerHTML;
-      td[i].textContent.slice(15, td[i].textContent.length);
-      td[i].textContent += "...";
-    }
-  }
-
-  function totalData() {
-    let summery = document.getElementsByClassName("summeryData");
-    let visibleData = document.getElementsByClassName("visibleData");
-    for (let i = 0; i < data.length; i++) {
-      let res = 0;
-      let columnData = table.column(i).data();
-      for (let j = 0; j < columnData.length; j++) {
-        if (
-          typeof columnData[j] === "string" &&
-          !columnData[j].includes("-") &&
-          !columnData[j].includes(".")
-        ) {
-          if (!isNaN(parseInt(columnData[j], 10))) {
-            res += parseInt(columnData[j], 10);
-          }
-        }
-      }
-      summery[i].innerHTML = "Total Data: " + res;
-      if (summery[i].innerHTML === "Total Data: 0") {
-        summery[i].innerHTML = "Total Data: No Data";
-      }
-    }
-  }
 
   //append elements to footer and header
   header.append(dataTableLength);
@@ -434,6 +468,40 @@ function styleHtml() {
   dataTableWrapper.prepend(header);
   document.body.append(footer);
   fixedHeader();
+}
+
+function totalData() {
+  let data = table.columns().data();
+
+  let summery = document.getElementsByClassName("summeryData");
+  for (let i = 0; i < data.length; i++) {
+    let res = 0;
+    let columnData = table.column(i).data();
+    for (let j = 0; j < columnData.length; j++) {
+      if (
+        typeof columnData[j] === "string" &&
+        !columnData[j].includes("-") &&
+        !columnData[j].includes(".")
+      ) {
+        if (!isNaN(parseInt(columnData[j], 10))) {
+          res += parseInt(columnData[j], 10);
+        }
+      }
+    }
+
+    // let string = res.replace(/(...?)/g, "$1,").slice(0, -1);
+    // if (string.slice(-1) === ",") {
+    //   let correctStr = string.slice(0, -1);
+    //   summery[i].innerHTML = `Total Data: ${correctStr}`;
+    // } else {
+    //   summery[i].innerHTML = `Total Data: ${string}`;
+    // }
+
+    summery[i].innerHTML = "Total Data: " + res;
+    if (summery[i].innerHTML === "Total Data: 0") {
+      summery[i].innerHTML = "Total Data: No Data";
+    }
+  }
 }
 
 function fixedHeader() {
