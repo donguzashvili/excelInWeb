@@ -19,7 +19,7 @@ function fetchData(url) {
 }
 
 let tHeadID = 0;
-
+//open json and make objects for data
 function objectCreate(data) {
   for (let key in data) {
     for (let i = 0; i < data[key].length; i++) {
@@ -41,8 +41,9 @@ function objectCreate(data) {
     }
     break;
   }
-
+  //pass this data to dataTable
   renderCustomer(dataArray);
+  //handle object keys to use them in header
   let croped;
   for (let key in data) {
     if (key.includes("_")) {
@@ -56,6 +57,8 @@ function objectCreate(data) {
       nameArray.push(key);
     }
   }
+
+  //change first char from string and style them(uppercase)
   let changed;
   for (let i = 0; i < nameArray.length; i++) {
     for (let j = 0; j < nameArray[i].length; j++) {
@@ -80,16 +83,15 @@ function objectCreate(data) {
         nameArray[i][j] = changed;
       }
     }
-
     let h5 = document.getElementsByClassName("summeryHeader")[i];
     h5.innerHTML =
       typeof nameArray[i] === "string"
         ? nameArray[i] + " Summery"
         : nameArray[i].join(" ") + " Summery";
   }
-  calcVisibleData();
 }
 
+//dataTable
 function renderCustomer(array) {
   dataTable = $("#myTable").DataTable({
     autoWidth: false,
@@ -152,6 +154,7 @@ function renderCustomer(array) {
     ],
   });
 
+  //html
   $("#myTable thead th").each(function () {
     const title = $("#myTable thead th").eq($(this).index()).text();
     $(this).html(
@@ -189,6 +192,7 @@ function renderCustomer(array) {
   syleMainSearch();
 }
 
+//toggle checkbox container
 const handleCheckBox = (e) => {
   e.stopPropagation();
   columnNum = e.target.id;
@@ -197,12 +201,14 @@ const handleCheckBox = (e) => {
   e.target.parentNode.parentNode.children[1].classList.toggle("open");
 };
 
+//give main search placeholder
 function syleMainSearch() {
   let searchInput =
     document.getElementById("myTable_filter").children[0].children[0];
   searchInput.setAttribute("placeholder", "Search for any data");
 }
 
+//close select boxes when clicked on window
 window.addEventListener("click", () => {
   let open = document.getElementsByClassName("checkboxes");
 
@@ -216,6 +222,7 @@ window.addEventListener("click", () => {
   }
 });
 
+//when select or input changes calculate new Current Data
 function contentLength() {
   let select = document.getElementsByTagName("select")[0];
   let input =
@@ -226,13 +233,16 @@ function contentLength() {
   input.addEventListener("input", calcVisibleData);
 }
 
+//make checkboxs for select
 function selectSearch() {
   let columnId = 0;
   const columnsData = table.columns().data();
   const checkboxes = $(".checkboxesContainer");
   let uniqueData;
   for (let i = 0; i < columnsData.length; i++) {
+    //make them unique
     uniqueData = columnsData[i].filter((v, i, a) => a.indexOf(v) === i);
+    //sort them
     sortedData = uniqueData.sort((a, b) => {
       return a - b;
     });
@@ -247,9 +257,15 @@ function selectSearch() {
     }
     checkboxes[i].innerHTML = checkedInputs;
   }
+
+  //when checkbox clicked search for value data on each column
   checkboxSearch();
+
+  //make checkbox containers relative to children to handle overflow
   widthRelative();
 }
+
+//search for checkbox values
 function checkboxSearch() {
   const checkBox = $("input[type = checkbox]");
   checkBox.each(function () {
@@ -259,24 +275,33 @@ function checkboxSearch() {
           .children[1].id;
 
       if (this.checked) {
+        //checkbox value
         let value = this.nextElementSibling.innerHTML.trim();
+        //handle whitespaces and prepare them for search
         value = checkString(value);
-        console.log(checkString(value));
+        console.log("value: " + value);
+        //if this is not first data in array
         if (searchArr.length >= 1) {
           searchArr.push(`|^${value}`);
+          //if this is first data in array
         } else {
           searchArr.push(`^${value}`);
         }
+        console.log("masivi monishvnis dros " + searchArr);
         let regex = "";
+        //open array and push items in string
         for (let i = 0; i < searchArr.length; i++) {
           regex += searchArr[i];
         }
         $(e.target.form[0][0]).text($(this).val()).val();
         table.column(columnId).every(function () {
+          console.log("regexi dzebnis dros: " + regex);
           const column = this;
           column.search(regex, true).draw();
         });
+        //when search finished and all elements are on table calculate new data
         calcVisibleData();
+        //if unchecked box
       } else if (!this.checked) {
         let value = this.nextElementSibling.innerHTML;
         value = checkString(value);
@@ -286,37 +311,48 @@ function checkboxSearch() {
           some = searchArr.indexOf(`|^${value}`);
         }
         searchArr.splice(some, 1);
+        console.log(searchArr.length);
         if (searchArr.length >= 1) {
+          console.log("akac shemovida");
           if (searchArr[0].startsWith("|")) {
             let firstElem = searchArr[0].slice(1);
             searchArr[0] = firstElem;
           }
+          console.log("masivi unchecked is dros: " + searchArr);
           regex = "";
           for (let i = 0; i < searchArr.length; i++) {
             regex += searchArr[i];
           }
-          console.log(`ColumnId: ${columnId} regex: ${regex}`);
           table.column(columnId).every(function () {
+            console.log("regexi uncheked is dzebnis dros: " + regex);
             const column = this;
             column.search(regex, true).draw();
           });
           calcVisibleData();
+        } else if (searchArr.length === 0) {
+          table.column(columnId).every(function () {
+            const column = this;
+            column.search("", true).draw();
+          });
         }
       }
+      console.log("masivi funkciidan gasvlis dros: " + searchArr);
     });
   });
 }
+//prepare strings for search
 function checkString(value) {
   let v_array = value.trim().split(" ").join(".*");
 
   return v_array;
 }
-
+//make parents container childrens relative
 function widthRelative() {
   let selectBox = document.getElementsByTagName("select");
   selectBox[12].style.width = "680px";
 }
 
+//calculate Current Data
 function calcVisibleData() {
   let tableRow = document.getElementsByTagName("tr");
   let container = document.getElementsByClassName("visibleData");
@@ -373,6 +409,7 @@ function calcVisibleData() {
   }
   // cropString();
 }
+//crop long strings and add them in span when hovered
 function cropString() {
   let td = document.getElementsByTagName("td");
   for (let i = 0; i < td.length; i++) {
@@ -396,6 +433,8 @@ function cropString() {
     }
   }
 }
+
+//search for checkboxes pt1
 function individualSearch() {
   $(".indSearch").on("input", function (e) {
     columnId = e.target.parentNode.parentNode.children[0].children[1].id;
@@ -406,7 +445,7 @@ function individualSearch() {
     searchData(columnId, container, newValue);
   });
 }
-
+//search for checkboxes pt2
 function searchData(id, container, value) {
   let data = table.column(id).data();
   let checkedInputs = "";
@@ -418,18 +457,21 @@ function searchData(id, container, value) {
     if (item.startsWith(value.toUpperCase()) || item.startsWith(value)) {
       checkedInputs += ` <label for=${id++}>
                         <input type="checkbox" id= ${id++ - 1} value= ${item} />
-                         ${item}
+                        <p className="checkboxData">
+                        ${item}</p>
+                         
                         </label>`;
     } else if (value === "") {
       checkedInputs += ` <label for=${id++}>
                         <input type="checkbox" id= ${id++ - 1} value= ${item} />
-                         ${item}
+                        <p className="checkboxData">
+                        ${item}</p>
                         </label>`;
     }
   });
   container.innerHTML = checkedInputs;
 }
-
+//styiling html
 function styleHtml() {
   //create footer and header
   const header = document.createElement("header");
@@ -470,6 +512,8 @@ function styleHtml() {
   for (let i = 0; i < current.length; i++) {
     current[i].addEventListener("click", calcVisibleData);
   }
+
+  //calculate total amount of data
   totalData();
 
   //append elements to footer and header
@@ -483,6 +527,7 @@ function styleHtml() {
   fixedHeader();
 }
 
+//calculate total amount of data
 function totalData() {
   let data = table.columns().data();
 
@@ -517,6 +562,7 @@ function totalData() {
   }
 }
 
+//make header fixed on top
 function fixedHeader() {
   //take tables offset and tableHead
   let table = document.getElementById("myTable");
