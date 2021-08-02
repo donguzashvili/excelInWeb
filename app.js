@@ -1,6 +1,6 @@
 const URL = "assets/fackeBackEnd/data.json";
 const dataArray = [];
-let search = [];
+let searchArr = [];
 let regex = "";
 let columnNum = 0;
 let id = 15;
@@ -187,7 +187,6 @@ function renderCustomer(array) {
   styleHtml();
   contentLength();
   syleMainSearch();
-  calcItems();
 }
 
 const handleCheckBox = (e) => {
@@ -248,63 +247,76 @@ function selectSearch() {
     }
     checkboxes[i].innerHTML = checkedInputs;
   }
-
+  checkboxSearch();
+  widthRelative();
+}
+function checkboxSearch() {
   const checkBox = $("input[type = checkbox]");
   checkBox.each(function () {
     $(this).on("keyup change", function (e) {
       columnId =
         e.target.parentNode.parentNode.parentNode.previousElementSibling
           .children[1].id;
-      regex = "";
+
       if (this.checked) {
-        search.push($(this).val());
-        for (let i = 0; i < search.length; i++) {
-          if (i >= 1) {
-            regex += "|" + "^" + search[i];
-          } else {
-            regex += search[i];
-          }
-          // i >= 1 ? (regex += "|" + search[i]) : (regex += search[i]);
+        let value = this.nextElementSibling.innerHTML.trim();
+        value = checkString(value);
+        console.log(checkString(value));
+        if (searchArr.length >= 1) {
+          searchArr.push(`|^${value}`);
+        } else {
+          searchArr.push(`^${value}`);
+        }
+        let regex = "";
+        for (let i = 0; i < searchArr.length; i++) {
+          regex += searchArr[i];
         }
         $(e.target.form[0][0]).text($(this).val()).val();
-        table.column(columnId).each(function () {
+        table.column(columnId).every(function () {
           const column = this;
-          column.search(regex, true, true).draw();
+          column.search(regex, true).draw();
         });
         calcVisibleData();
       } else if (!this.checked) {
-        table.column(columnId).every(function () {
-          const column = this;
-          column.search("").draw();
-        });
-        calcVisibleData();
-      } else {
-        let index = search.indexOf($(this).val());
-        $(e.target.form[0][0]).text(" ").val();
-        search.length > 0 ? search.splice(index, 1) : null;
-        table.column(columnId).every(function () {
-          const column = this;
-          column.search("").draw();
-        });
-        calcVisibleData();
+        let value = this.nextElementSibling.innerHTML;
+        value = checkString(value);
+
+        let some = searchArr.indexOf(`^${value}`);
+        if (some !== 0) {
+          some = searchArr.indexOf(`|^${value}`);
+        }
+        searchArr.splice(some, 1);
+        if (searchArr.length >= 1) {
+          if (searchArr[0].startsWith("|")) {
+            let firstElem = searchArr[0].slice(1);
+            searchArr[0] = firstElem;
+          }
+          regex = "";
+          for (let i = 0; i < searchArr.length; i++) {
+            regex += searchArr[i];
+          }
+          console.log(`ColumnId: ${columnId} regex: ${regex}`);
+          table.column(columnId).every(function () {
+            const column = this;
+            column.search(regex, true).draw();
+          });
+          calcVisibleData();
+        }
       }
     });
   });
-  // widthRelative();
+}
+function checkString(value) {
+  let v_array = value.trim().split(" ").join(".*");
+
+  return v_array;
 }
 
-// function widthRelative() {
-//   $(".multiselect").on("click", function (e) {
-//     let container = e.target.offsetParent.nextElementSibling;
-//     let child = e.target.offsetParent.nextElementSibling.children[1];
-//     let tempVar;
-//     for (let i = 0; i < child.children.length; i++) {
-//       console.log(child.children[1].children[i]);
-//     }
-//   });
-// }
+function widthRelative() {
+  let selectBox = document.getElementsByTagName("select");
+  selectBox[12].style.width = "680px";
+}
 
-function calcItems() {}
 function calcVisibleData() {
   let tableRow = document.getElementsByTagName("tr");
   let container = document.getElementsByClassName("visibleData");
@@ -312,9 +324,8 @@ function calcVisibleData() {
   for (let i = 2; i < tableRow.length; i++) {
     let currentData;
     for (let j = 0; j < container.length; j++) {
-      if (tableRow[i].children[j].innerHTML === "No matching records found") {
+      if (tableRow[2].children[0].innerHTML === "No matching records found") {
         container[j].innerHTML = "Current Data: No Data";
-        console.log(tableRow[i].children[j].innerHTML);
       } else if (typeof tableRow[i].children[j].innerHTML === "string") {
         let checked;
         if (tableRow[i].children[j].innerHTML.includes("-")) {
@@ -360,7 +371,9 @@ function calcVisibleData() {
       }
     }
   }
-
+  // cropString();
+}
+function cropString() {
   let td = document.getElementsByTagName("td");
   for (let i = 0; i < td.length; i++) {
     if (td[i].innerHTML.length > 20) {
@@ -402,7 +415,7 @@ function searchData(id, container, value) {
     return a - b;
   });
   sortedData.map((item) => {
-    if (item.startsWith(value.toUpperCase())) {
+    if (item.startsWith(value.toUpperCase()) || item.startsWith(value)) {
       checkedInputs += ` <label for=${id++}>
                         <input type="checkbox" id= ${id++ - 1} value= ${item} />
                          ${item}
