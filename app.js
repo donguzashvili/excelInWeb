@@ -19,7 +19,7 @@ formdata.append("token", "fr-R#WinBRj12Tyy^Sm=#bi30Zs@Ql");
 formdata.append("act", "report1");
 formdata.append(
   "data",
-  '{"start_date": "2021-01-02", "end_date":"2021-08-03"}'
+  '{"start_date": "2021-08-02", "end_date":"2021-08-03"}'
 );
 
 let options = {
