@@ -1,4 +1,4 @@
-const URL = "assets/fackeBackEnd/data.json";
+const URL = "http://192.168.48.11:8000/api/api.php";
 const dataArray = [];
 let searchArr = [];
 let regex = "";
@@ -7,12 +7,32 @@ let id = 15;
 let table = null;
 let dataTable;
 let nameArray = [];
+let searchObj = {};
 
-function fetchData(url) {
+let obj = {};
+obj.start_date = "";
+obj.end_date = "";
+let json_data = JSON.stringify(obj);
+
+let formdata = new FormData();
+formdata.append("token", "fr-R#WinBRj12Tyy^Sm=#bi30Zs@Ql");
+formdata.append("act", "report1");
+formdata.append(
+  "data",
+  '{"start_date": "2021-01-02", "end_date":"2021-08-03"}'
+);
+
+let options = {
+  method: "POST",
+  body: formdata,
+  redirect: "follow",
+};
+
+function fetchData() {
   try {
-    fetch(url)
+    fetch(URL, options)
       .then((res) => res.json())
-      .then((data) => objectCreate(data));
+      .then((data) => objectCreate(data.data));
   } catch (err) {
     console.log(err);
   }
@@ -21,74 +41,72 @@ function fetchData(url) {
 let tHeadID = 0;
 //open json and make objects for data
 function objectCreate(data) {
-  for (let key in data) {
-    for (let i = 0; i < data[key].length; i++) {
-      dataArray.push({
-        id: data.id[i],
-        payment_amount: data.payment_amount[i],
-        graphic_date: data.graphic_date[i],
-        valuta: data.valuta[i],
-        valuta_course: data.valuta_course[i],
-        payment_date: data.payment_date[i],
-        payment_course: data.payment_course[i],
-        real_payment: data.real_payment[i],
-        customer_id: data.customer_id[i],
-        realization_id: data.realization_id[i],
-        doc_num: data.doc_num[i],
-        purpose: data.purpose[i],
-        staff_group_id: data.staff_group_id[i],
-      });
-    }
-    break;
+  for (let i = 0; i < data.length; i++) {
+    dataArray.push({
+      n: data[i].n,
+      code: data[i].code,
+      date: data[i].date,
+      doc_type: data[i].doc_type,
+      manager: data[i].manager,
+      manager2: data[i].manager2,
+      name: data[i].name,
+      pay_type: data[i].pay_type,
+      sector: data[i].sector,
+      w_cost: data[i].w_cost,
+      waybill_num: data[i].waybill_num,
+      purpose: data[i].purpose,
+    });
+    // break;
   }
   //pass this data to dataTable
   renderCustomer(dataArray);
-  //handle object keys to use them in header
+  // handle object keys to use them in header
   let croped;
-  for (let key in data) {
-    if (key.includes("_")) {
-      let splited = key.replace("_", " ");
-      if (splited.includes("_")) {
-        splited = splited.replace("_", " ");
-      }
-      croped = splited.split(" ");
-      nameArray.push(croped);
-    } else {
-      nameArray.push(key);
-    }
-  }
+  // for (let key in data) {
+  //   if (key.includes("_")) {
+  //     let splited = key.replace("_", " ");
+  //     if (splited.includes("_")) {
+  //       splited = splited.replace("_", " ");
+  //     }
+  //     croped = splited.split(" ");
+  //     nameArray.push(croped);
+  //   } else {
+  //     nameArray.push(key);
+  //   }
+  // }
 
-  //change first char from string and style them(uppercase)
+  // change first char from string and style them(uppercase)
   let changed;
-  for (let i = 0; i < nameArray.length; i++) {
-    for (let j = 0; j < nameArray[i].length; j++) {
-      if (typeof nameArray[i] === "string") {
-        changed = nameArray[i].replace(
-          nameArray[i].charAt(0),
-          nameArray[i].charAt(0).toUpperCase()
-        );
-        nameArray[i] = changed;
-        if (nameArray[i].length < 3) {
-          changed = nameArray[i].toUpperCase();
-          nameArray[i] = changed;
-        }
-      }
-      changed = nameArray[i][j].replace(
-        nameArray[i][j].charAt(0),
-        nameArray[i][j].charAt(0).toUpperCase()
-      );
-      nameArray[i][j] = changed;
-      if (nameArray[i][j].length < 3) {
-        changed = nameArray[i][j].toUpperCase();
-        nameArray[i][j] = changed;
-      }
-    }
-    let h5 = document.getElementsByClassName("summeryHeader")[i];
-    h5.innerHTML =
-      typeof nameArray[i] === "string"
-        ? nameArray[i] + " Summery"
-        : nameArray[i].join(" ") + " Summery";
-  }
+  // for (let i = 0; i < nameArray.length; i++) {
+  //   for (let j = 0; j < nameArray[i].length; j++) {
+  //     if (typeof nameArray[i] === "string") {
+  //       changed = nameArray[i].replace(
+  //         nameArray[i].charAt(0),
+  //         nameArray[i].charAt(0).toUpperCase()
+  //       );
+  //       nameArray[i] = changed;
+  //       if (nameArray[i].length < 3) {
+  //         changed = nameArray[i].toUpperCase();
+  //         nameArray[i] = changed;
+  //       }
+  //     }
+  //     changed = nameArray[i][j].replace(
+  //       nameArray[i][j].charAt(0),
+  //       nameArray[i][j].charAt(0).toUpperCase()
+  //     );
+  //     nameArray[i][j] = changed;
+  //     if (nameArray[i][j].length < 3) {
+  //       changed = nameArray[i][j].toUpperCase();
+  //       nameArray[i][j] = changed;
+  //     }
+  //   }
+  //   let h5 = document.getElementsByClassName("summeryHeader")[i];
+  //   h5.innerHTML =
+  //     typeof nameArray[i] === "string"
+  //       ? nameArray[i] + " Summery"
+  //       : nameArray[i].join(" ") + " Summery";
+  // }
+  calcVisibleData();
 }
 
 //dataTable
@@ -97,59 +115,58 @@ function renderCustomer(array) {
     autoWidth: false,
     regex: true,
     data: array,
+    search: {
+      smart: false,
+    },
     columns: [
       {
-        data: "id",
-        title: "ID",
+        data: "n",
+        title: "№",
       },
       {
-        data: "payment_amount",
-        title: "Payment Amount",
+        data: "code",
+        title: "Code",
       },
       {
-        data: "graphic_date",
-        title: "Graphic Date",
+        data: "date",
+        title: "Date",
       },
       {
-        data: "valuta",
-        title: "Valuta",
+        data: "doc_type",
+        title: "Doc Type",
       },
       {
-        data: "valuta_course",
-        title: "Valuta Course",
+        data: "manager",
+        title: "Manager",
       },
       {
-        data: "payment_date",
-        title: "Payment Date",
+        data: "manager2",
+        title: "Manager №2",
       },
 
       {
-        data: "payment_course",
-        title: "Payment Course",
+        data: "name",
+        title: "Name",
       },
       {
-        data: "real_payment",
-        title: "Real Payment",
+        data: "pay_type",
+        title: "Pay Type",
       },
       {
-        data: "customer_id",
-        title: "Customer ID",
+        data: "sector",
+        title: "Sector",
       },
       {
-        data: "realization_id",
-        title: "Realization ID",
+        data: "w_cost",
+        title: "Cost",
       },
       {
-        data: "doc_num",
-        title: "Doc Num",
+        data: "waybill_num",
+        title: "WayBill Num",
       },
       {
         data: "purpose",
         title: "Purpose",
-      },
-      {
-        data: "staff_group_id",
-        title: "Staff Group ID",
       },
     ],
   });
@@ -192,7 +209,7 @@ function renderCustomer(array) {
   syleMainSearch();
 }
 
-//toggle checkbox container
+// //toggle checkbox container
 const handleCheckBox = (e) => {
   e.stopPropagation();
   columnNum = e.target.id;
@@ -201,7 +218,7 @@ const handleCheckBox = (e) => {
   e.target.parentNode.parentNode.children[1].classList.toggle("open");
 };
 
-//give main search placeholder
+// //give main search placeholder
 function syleMainSearch() {
   let searchInput =
     document.getElementById("myTable_filter").children[0].children[0];
@@ -222,7 +239,7 @@ window.addEventListener("click", () => {
   }
 });
 
-//when select or input changes calculate new Current Data
+// //when select or input changes calculate new Current Data
 function contentLength() {
   let select = document.getElementsByTagName("select")[0];
   let input =
@@ -233,7 +250,7 @@ function contentLength() {
   input.addEventListener("input", calcVisibleData);
 }
 
-//make checkboxs for select
+// //make checkboxs for select
 function selectSearch() {
   let columnId = 0;
   const columnsData = table.columns().data();
@@ -265,7 +282,7 @@ function selectSearch() {
   widthRelative();
 }
 
-//search for checkbox values
+// //search for checkbox values
 function checkboxSearch() {
   const checkBox = $("input[type = checkbox]");
   checkBox.each(function () {
@@ -276,28 +293,36 @@ function checkboxSearch() {
 
       if (this.checked) {
         //checkbox value
+        let container = e.target.parentNode.parentNode;
+        let child = e.target.parentNode;
+        container.prepend(child);
         let value = this.nextElementSibling.innerHTML.trim();
         //handle whitespaces and prepare them for search
         value = checkString(value);
-        console.log("value: " + value);
+
         //if this is not first data in array
         if (searchArr.length >= 1) {
           searchArr.push(`|^${value}`);
-          //if this is first data in array
         } else {
           searchArr.push(`^${value}`);
         }
-        console.log("masivi monishvnis dros " + searchArr);
+
+        // createSearchObjects(value, columnId);
+
         let regex = "";
         //open array and push items in string
         for (let i = 0; i < searchArr.length; i++) {
+          // for (let key in searchArr[i]) {
+          // columnId = key;
           regex += searchArr[i];
+          // }
         }
         $(e.target.form[0][0]).text($(this).val()).val();
         table.column(columnId).every(function () {
+          console.log("kolonis nomeri: " + columnId);
           console.log("regexi dzebnis dros: " + regex);
           const column = this;
-          column.search(regex, true).draw();
+          column.search(regex, true, true).draw();
         });
         //when search finished and all elements are on table calculate new data
         calcVisibleData();
@@ -306,18 +331,20 @@ function checkboxSearch() {
         let value = this.nextElementSibling.innerHTML;
         value = checkString(value);
 
-        let some = searchArr.indexOf(`^${value}`);
-        if (some !== 0) {
-          some = searchArr.indexOf(`|^${value}`);
-        }
-        searchArr.splice(some, 1);
-        console.log(searchArr.length);
-        if (searchArr.length >= 1) {
-          console.log("akac shemovida");
-          if (searchArr[0].startsWith("|")) {
-            let firstElem = searchArr[0].slice(1);
-            searchArr[0] = firstElem;
+        for (let i = 0; i < searchArr.length; i++) {
+          if (
+            searchArr[i].includes(`^${value}`) ||
+            searchArr[i].includes(`|^${value}`)
+          ) {
+            searchArr.splice(i, 1);
           }
+        }
+        if (searchArr.length >= 1) {
+          if (searchArr[0].startsWith("|")) {
+            let firstChar = searchArr[0].slice(1);
+            searchArr[0] = firstChar;
+          }
+
           console.log("masivi unchecked is dros: " + searchArr);
           regex = "";
           for (let i = 0; i < searchArr.length; i++) {
@@ -325,8 +352,9 @@ function checkboxSearch() {
           }
           table.column(columnId).every(function () {
             console.log("regexi uncheked is dzebnis dros: " + regex);
+            console.log("column ID: " + columnId);
             const column = this;
-            column.search(regex, true).draw();
+            column.search(regex + "$", true, true).draw();
           });
           calcVisibleData();
         } else if (searchArr.length === 0) {
@@ -336,11 +364,41 @@ function checkboxSearch() {
           });
         }
       }
-      console.log("masivi funkciidan gasvlis dros: " + searchArr);
+      let $checkbox = $('input[type="checkbox"]');
+      if (!$checkbox.is(":checked")) {
+        table.columns().every(function () {
+          const column = this;
+          column.search("", true).draw();
+        });
+        calcVisibleData();
+      }
+
+      console.log(searchArr);
     });
   });
 }
-//prepare strings for search
+
+function createSearchObjects(value, columnId) {
+  let created;
+  if (searchArr.length > 0) {
+    for (let i = 0; i < searchArr.length; i++) {
+      for (let key in searchArr[i]) {
+        if (key === columnId && created !== true) {
+          created = false;
+          searchArr[i][key] += `|^${value}`;
+          break;
+        } else if (key !== columnId) {
+          created = true;
+          searchArr.push({ [columnId]: `^${value}` });
+        }
+        break;
+      }
+    }
+  } else {
+    searchArr.push({ [columnId]: `^${value}` });
+  }
+}
+// prepare strings for search
 function checkString(value) {
   let v_array = value.trim().split(" ").join(".*");
 
@@ -349,10 +407,10 @@ function checkString(value) {
 //make parents container childrens relative
 function widthRelative() {
   let selectBox = document.getElementsByTagName("select");
-  selectBox[12].style.width = "680px";
+  selectBox[12].style.width = "480px";
 }
 
-//calculate Current Data
+// //calculate Current Data
 function calcVisibleData() {
   let tableRow = document.getElementsByTagName("tr");
   let container = document.getElementsByClassName("visibleData");
@@ -408,6 +466,11 @@ function calcVisibleData() {
     }
   }
   // cropString();
+
+  let paginateButton = document.getElementsByClassName("paginate_button");
+  for (let i = 0; i < paginateButton.length; i++) {
+    paginateButton[i].addEventListener("click", calcVisibleData);
+  }
 }
 //crop long strings and add them in span when hovered
 function cropString() {
@@ -434,7 +497,7 @@ function cropString() {
   }
 }
 
-//search for checkboxes pt1
+// //search for checkboxes pt1
 function individualSearch() {
   $(".indSearch").on("input", function (e) {
     columnId = e.target.parentNode.parentNode.children[0].children[1].id;
@@ -459,7 +522,7 @@ function searchData(id, container, value) {
                         <input type="checkbox" id= ${id++ - 1} value= ${item} />
                         <p className="checkboxData">
                         ${item}</p>
-                         
+
                         </label>`;
     } else if (value === "") {
       checkedInputs += ` <label for=${id++}>
@@ -491,7 +554,7 @@ function styleHtml() {
   // const thLength = document.getElementsByTagName("th");
 
   //summery row
-  for (let i = 0; i < 13; i++) {
+  for (let i = 0; i < 12; i++) {
     let th = document.createElement("th");
     th.classList.add("grandTotal");
     tr.appendChild(th);
@@ -530,8 +593,9 @@ function styleHtml() {
 //calculate total amount of data
 function totalData() {
   let data = table.columns().data();
-
   let summery = document.getElementsByClassName("summeryData");
+  console.log(console.log(table.column(0).data()));
+
   for (let i = 0; i < data.length; i++) {
     let res = 0;
     let columnData = table.column(i).data();
