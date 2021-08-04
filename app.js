@@ -5,9 +5,12 @@ let regex = "";
 let columnNum = 0;
 let id = 15;
 let table = null;
-let dataTable;
 let nameArray = [];
 let searchObj = {};
+
+let fetchFix = {
+  tr: 0,
+};
 
 let obj = {};
 obj.start_date = "";
@@ -19,7 +22,9 @@ formdata.append("token", "fr-R#WinBRj12Tyy^Sm=#bi30Zs@Ql");
 formdata.append("act", "report1");
 formdata.append(
   "data",
-  '{"start_date": "2021-08-02", "end_date":"2021-08-03"}'
+  `{"start_date": "${localStorage.getItem(
+    "startDate"
+  )}", "end_date": "${localStorage.getItem("endDate")}"}`
 );
 
 let options = {
@@ -32,86 +37,31 @@ function fetchData() {
   try {
     fetch(URL, options)
       .then((res) => res.json())
-      .then((data) => objectCreate(data.data));
+      .then((data) => renderCustomer(data.data));
   } catch (err) {
     console.log(err);
   }
 }
 
-let tHeadID = 0;
-//open json and make objects for data
-function objectCreate(data) {
-  for (let i = 0; i < data.length; i++) {
-    dataArray.push({
-      n: data[i].n,
-      code: data[i].code,
-      date: data[i].date,
-      doc_type: data[i].doc_type,
-      manager: data[i].manager,
-      manager2: data[i].manager2,
-      name: data[i].name,
-      pay_type: data[i].pay_type,
-      sector: data[i].sector,
-      w_cost: data[i].w_cost,
-      waybill_num: data[i].waybill_num,
-      purpose: data[i].purpose,
-    });
-    // break;
-  }
-  //pass this data to dataTable
-  renderCustomer(dataArray);
-  // handle object keys to use them in header
-  let croped;
-  // for (let key in data) {
-  //   if (key.includes("_")) {
-  //     let splited = key.replace("_", " ");
-  //     if (splited.includes("_")) {
-  //       splited = splited.replace("_", " ");
-  //     }
-  //     croped = splited.split(" ");
-  //     nameArray.push(croped);
-  //   } else {
-  //     nameArray.push(key);
-  //   }
-  // }
+function handleTime() {
+  let applyTimeBtn = document.getElementsByClassName("applyBtn")[0];
+  console.log(applyTimeBtn);
+  applyTimeBtn.addEventListener("click", () => {
+    let box = document.getElementsByClassName("drp-selected")[0];
+    obj.start_date = box.innerHTML.split(" ")[0];
+    localStorage.setItem("startDate", obj.start_date);
+    obj.end_date = box.innerHTML.split(" ")[2];
+    localStorage.setItem("endDate", obj.end_date);
 
-  // change first char from string and style them(uppercase)
-  let changed;
-  // for (let i = 0; i < nameArray.length; i++) {
-  //   for (let j = 0; j < nameArray[i].length; j++) {
-  //     if (typeof nameArray[i] === "string") {
-  //       changed = nameArray[i].replace(
-  //         nameArray[i].charAt(0),
-  //         nameArray[i].charAt(0).toUpperCase()
-  //       );
-  //       nameArray[i] = changed;
-  //       if (nameArray[i].length < 3) {
-  //         changed = nameArray[i].toUpperCase();
-  //         nameArray[i] = changed;
-  //       }
-  //     }
-  //     changed = nameArray[i][j].replace(
-  //       nameArray[i][j].charAt(0),
-  //       nameArray[i][j].charAt(0).toUpperCase()
-  //     );
-  //     nameArray[i][j] = changed;
-  //     if (nameArray[i][j].length < 3) {
-  //       changed = nameArray[i][j].toUpperCase();
-  //       nameArray[i][j] = changed;
-  //     }
-  //   }
-  //   let h5 = document.getElementsByClassName("summeryHeader")[i];
-  //   h5.innerHTML =
-  //     typeof nameArray[i] === "string"
-  //       ? nameArray[i] + " Summery"
-  //       : nameArray[i].join(" ") + " Summery";
-  // }
-  calcVisibleData();
+    location.reload();
+  });
 }
+let tHeadID = 0;
 
 //dataTable
 function renderCustomer(array) {
-  dataTable = $("#myTable").DataTable({
+  table = $("#myTable").DataTable({
+    pageLength: 100,
     autoWidth: false,
     regex: true,
     data: array,
@@ -170,6 +120,7 @@ function renderCustomer(array) {
       },
     ],
   });
+  console.log(array);
 
   //html
   $("#myTable thead th").each(function () {
@@ -202,11 +153,11 @@ function renderCustomer(array) {
     );
     tHeadID++;
   });
-  table = dataTable;
-  selectSearch(table);
+
   styleHtml();
   contentLength();
   syleMainSearch();
+  calcVisibleData();
 }
 
 // //toggle checkbox container
@@ -215,6 +166,8 @@ const handleCheckBox = (e) => {
   columnNum = e.target.id;
   regex = "";
   search = [];
+  selectSearch(e);
+
   e.target.parentNode.parentNode.children[1].classList.toggle("open");
 };
 
@@ -250,39 +203,37 @@ function contentLength() {
   input.addEventListener("input", calcVisibleData);
 }
 
-// //make checkboxs for select
-function selectSearch() {
-  let columnId = 0;
+//make checkboxs for select
+function selectSearch(e) {
   const columnsData = table.columns().data();
   const checkboxes = $(".checkboxesContainer");
+  let ID = e.target.id;
   let uniqueData;
-  for (let i = 0; i < columnsData.length; i++) {
-    //make them unique
-    uniqueData = columnsData[i].filter((v, i, a) => a.indexOf(v) === i);
-    //sort them
-    sortedData = uniqueData.sort((a, b) => {
-      return a - b;
-    });
-    let checkedInputs = "";
-    for (let j = 0; j < uniqueData.length; j++) {
-      checkedInputs += ` <label for=${id++}>
+  //make them unique
+  uniqueData = columnsData[ID].filter((v, i, a) => a.indexOf(v) === i);
+  //sort them
+  sortedData = uniqueData.sort((a, b) => {
+    return a - b;
+  });
+  let checkedInputs = "";
+  for (let i = 0; i < sortedData.length; i++) {
+    checkedInputs += ` <label for=${id++}>
                         <input type="checkbox" id= ${id++ - 1} value= ${
-        sortedData[j]
-      } />
-                     <p className="checkboxData">    ${sortedData[j]}</p>
+      sortedData[i]
+    } />
+                     <p className="checkboxData">    ${sortedData[i]}</p>
                         </label>`;
-    }
-    checkboxes[i].innerHTML = checkedInputs;
   }
+  checkboxes[ID].innerHTML = checkedInputs;
 
   //when checkbox clicked search for value data on each column
   checkboxSearch();
 
   //make checkbox containers relative to children to handle overflow
-  widthRelative();
+  widthRelative(e);
 }
 
-// //search for checkbox values
+//search for checkbox values
 function checkboxSearch() {
   const checkBox = $("input[type = checkbox]");
   checkBox.each(function () {
@@ -292,90 +243,96 @@ function checkboxSearch() {
           .children[1].id;
 
       if (this.checked) {
-        //checkbox value
         let container = e.target.parentNode.parentNode;
         let child = e.target.parentNode;
         container.prepend(child);
         let value = this.nextElementSibling.innerHTML.trim();
-        //handle whitespaces and prepare them for search
-        value = checkString(value);
-
-        //if this is not first data in array
-        if (searchArr.length >= 1) {
-          searchArr.push(`|^${value}`);
+        let selectValue =
+          container.parentNode.previousElementSibling.children[0].children[0];
+        if (selectValue.innerHTML === " ") {
+          selectValue.innerHTML = value;
         } else {
-          searchArr.push(`^${value}`);
+          selectValue.innerHTML += ", " + value;
         }
 
-        // createSearchObjects(value, columnId);
+        let regex = checkedState(value);
 
-        let regex = "";
-        //open array and push items in string
-        for (let i = 0; i < searchArr.length; i++) {
-          // for (let key in searchArr[i]) {
-          // columnId = key;
-          regex += searchArr[i];
-          // }
-        }
-        $(e.target.form[0][0]).text($(this).val()).val();
         table.column(columnId).every(function () {
           console.log("kolonis nomeri: " + columnId);
           console.log("regexi dzebnis dros: " + regex);
           const column = this;
           column.search(regex, true, true).draw();
         });
-        //when search finished and all elements are on table calculate new data
         calcVisibleData();
+
         //if unchecked box
       } else if (!this.checked) {
         let value = this.nextElementSibling.innerHTML;
+
         value = checkString(value);
 
-        for (let i = 0; i < searchArr.length; i++) {
-          if (
-            searchArr[i].includes(`^${value}`) ||
-            searchArr[i].includes(`|^${value}`)
-          ) {
-            searchArr.splice(i, 1);
-          }
-        }
-        if (searchArr.length >= 1) {
-          if (searchArr[0].startsWith("|")) {
-            let firstChar = searchArr[0].slice(1);
-            searchArr[0] = firstChar;
-          }
+        let regex = uncheckedState(value);
 
-          console.log("masivi unchecked is dros: " + searchArr);
-          regex = "";
-          for (let i = 0; i < searchArr.length; i++) {
-            regex += searchArr[i];
-          }
-          table.column(columnId).every(function () {
-            console.log("regexi uncheked is dzebnis dros: " + regex);
-            console.log("column ID: " + columnId);
-            const column = this;
-            column.search(regex + "$", true, true).draw();
-          });
-          calcVisibleData();
-        } else if (searchArr.length === 0) {
-          table.column(columnId).every(function () {
-            const column = this;
-            column.search("", true).draw();
-          });
-        }
-      }
-      let $checkbox = $('input[type="checkbox"]');
-      if (!$checkbox.is(":checked")) {
-        table.columns().every(function () {
+        table.column(columnId).every(function () {
           const column = this;
-          column.search("", true).draw();
+          column.search(regex === undefined ? " " : regex, true, true).draw();
         });
         calcVisibleData();
       }
-
-      console.log(searchArr);
     });
   });
+}
+
+function uncheckedState(value) {
+  for (let i = 0; i < searchArr.length; i++) {
+    if (
+      searchArr[i].includes(`^${value}`) ||
+      searchArr[i].includes(`|^${value}`)
+    ) {
+      searchArr.splice(i, 1);
+    }
+  }
+
+  if (searchArr.length >= 1) {
+    if (searchArr[0].startsWith("|")) {
+      let firstChar = searchArr[0].slice(1);
+      searchArr[0] = firstChar;
+    }
+
+    regex = " ";
+
+    for (let i = 0; i < searchArr.length; i++) {
+      regex += searchArr[i];
+    }
+
+    return regex;
+  }
+}
+
+function checkedState(value) {
+  //handle whitespaces and prepare them for search
+  value = checkString(value);
+
+  //if this is not first data in array
+  if (searchArr.length >= 1) {
+    searchArr.push(`|^${value}`);
+  } else {
+    searchArr.push(`^${value}`);
+  }
+
+  // createSearchObjects(value, columnId);
+
+  let regex = "";
+  //open array and push items in string
+  for (let i = 0; i < searchArr.length; i++) {
+    // for (let key in searchArr[i]) {
+    // columnId = key;
+    regex += searchArr[i];
+    // }
+  }
+  return regex;
+
+  //when search finished and all elements are on table calculate new data
 }
 
 function createSearchObjects(value, columnId) {
@@ -398,19 +355,29 @@ function createSearchObjects(value, columnId) {
     searchArr.push({ [columnId]: `^${value}` });
   }
 }
+
 // prepare strings for search
 function checkString(value) {
   let v_array = value.trim().split(" ").join(".*");
 
   return v_array;
 }
+
 //make parents container childrens relative
-function widthRelative() {
-  let selectBox = document.getElementsByTagName("select");
-  selectBox[12].style.width = "480px";
+function widthRelative(e) {
+  // let selectBox = document.getElementsByTagName("select");
+
+  e.target.parentNode.nextElementSibling.children[1].children;
+  console.log(this.sortedData.length);
+  e.target.parentNode.style.width = length * 10 + "px";
+  // console.log(some);
+  // let length = Math.max.apply(
+  //   Math,
+  //   childrenArray.map((el) => el.length)
+  // );
 }
 
-// //calculate Current Data
+// calculate Current Data
 function calcVisibleData() {
   let tableRow = document.getElementsByTagName("tr");
   let container = document.getElementsByClassName("visibleData");
@@ -455,7 +422,6 @@ function calcVisibleData() {
     } else {
       //dasamtavrebelia
       let reversedStr = container[i].innerHTML.split("").reverse().join("");
-      let string = reversedStr.replace(/(...?)/g, "$1 ").slice(0, -1);
       let originalString = reversedStr.split("").reverse().join("");
       if (originalString.slice(-1) === ",") {
         let correctStr = string.slice(0, -1);
@@ -465,35 +431,20 @@ function calcVisibleData() {
       }
     }
   }
-  // cropString();
 
   let paginateButton = document.getElementsByClassName("paginate_button");
   for (let i = 0; i < paginateButton.length; i++) {
-    paginateButton[i].addEventListener("click", calcVisibleData);
+    paginateButton[i].setAttribute("onclick", "backToTop()");
+    paginateButton[i].addEventListener("click", () => {
+      calcVisibleData();
+    });
   }
 }
-//crop long strings and add them in span when hovered
-function cropString() {
-  let td = document.getElementsByTagName("td");
-  for (let i = 0; i < td.length; i++) {
-    if (td[i].innerHTML.length > 20) {
-      let storedData = td[i].innerHTML;
-      let sliced = td[i].textContent.slice(20, td[i].textContent.length);
-      let res;
-      if (sliced.slice(-1) === " ") {
-        let space = sliced.slice(-1);
-        res = td[i].textContent.replace(space, "...");
-      } else {
-        res = td[i].textContent.replace(sliced, "...");
-      }
-      td[i].innerHTML = res;
 
-      let span = document.createElement("span");
-      td[i].appendChild(span);
-      td[i].classList.add("hiddenDataTd");
-      span.classList.add("fullData");
-      span.innerHTML = storedData;
-    }
+function backToTop() {
+  let container = document.getElementById("myTable_wrapper");
+  if (container.scrollTop > 20) {
+    container.scrollTop = 0;
   }
 }
 
@@ -501,13 +452,12 @@ function cropString() {
 function individualSearch() {
   $(".indSearch").on("input", function (e) {
     columnId = e.target.parentNode.parentNode.children[0].children[1].id;
-
     let container = e.target.parentNode.children[1];
     let newValue = this.value;
-
     searchData(columnId, container, newValue);
   });
 }
+
 //search for checkboxes pt2
 function searchData(id, container, value) {
   let data = table.column(id).data();
@@ -516,8 +466,12 @@ function searchData(id, container, value) {
   let sortedData = uniqueData.sort((a, b) => {
     return a - b;
   });
+  console.log(sortedData);
   sortedData.map((item) => {
-    if (item.startsWith(value.toUpperCase()) || item.startsWith(value)) {
+    if (
+      (item !== "" && item.startsWith(value.toUpperCase())) ||
+      item.startsWith(value)
+    ) {
       checkedInputs += ` <label for=${id++}>
                         <input type="checkbox" id= ${id++ - 1} value= ${item} />
                         <p className="checkboxData">
@@ -537,15 +491,32 @@ function searchData(id, container, value) {
 //styiling html
 function styleHtml() {
   //create footer and header
-  const header = document.createElement("header");
-  const footer = document.createElement("footer");
-  header.classList.add("searchHeader");
+  const header = document.getElementsByClassName("searchHeader")[0];
+  const footer = document.getElementsByTagName("footer")[0];
   const dataTableWrapper = document.getElementById("myTable_wrapper");
   const dataTableLength = document.getElementById("myTable_length");
   const dataTableFilter = document.getElementById("myTable_filter");
   const dataTablePaginate = document.getElementById("myTable_paginate");
   const dataTableInfo = document.getElementById("myTable_info");
+  summeryData();
 
+  //calculate total amount of data
+  totalData();
+
+  //append elements to footer and header
+  header.append(dataTableLength);
+  dateHtml(header);
+  header.append(dataTableFilter);
+  footer.classList.add("dataTables_wrapper");
+  footer.append(dataTableInfo);
+  footer.append(dataTablePaginate);
+  dataTableWrapper.prepend(header);
+  document.body.append(footer);
+  fixedHeader();
+  datePicker();
+}
+
+function summeryData() {
   //create summery div
   const tHead = document.getElementsByTagName("thead");
   let tr = document.createElement("tr");
@@ -571,30 +542,39 @@ function styleHtml() {
     summeryData.classList.add("summeryData");
     visibleData.classList.add("visibleData");
   }
-  let current = document.getElementsByClassName("paginate_button");
-  for (let i = 0; i < current.length; i++) {
-    current[i].addEventListener("click", calcVisibleData);
-  }
-
-  //calculate total amount of data
-  totalData();
-
-  //append elements to footer and header
-  header.append(dataTableLength);
-  header.append(dataTableFilter);
-  footer.classList.add("dataTables_wrapper");
-  footer.append(dataTableInfo);
-  footer.append(dataTablePaginate);
-  dataTableWrapper.prepend(header);
-  document.body.append(footer);
-  fixedHeader();
 }
 
-//calculate total amount of data
+function dateHtml(header) {
+  let dateContainer = document.createElement("div");
+  dateContainer.classList.add("dateContainer");
+  header.append(dateContainer);
+  let dateLabel = document.createElement("label");
+  let dateInput = document.createElement("input");
+  let paragraph = document.createElement("p");
+
+  dateInput.setAttribute("id", "date");
+
+  dateContainer.append(dateLabel);
+  dateLabel.append(dateInput);
+  dateLabel.prepend(paragraph);
+  paragraph.innerHTML = "Search by Date";
+}
+
+function datePicker() {
+  $("#date").daterangepicker({
+    [obj.start_date]: moment().startOf("hour"),
+    [obj.end_date]: moment().startOf("hour").add(32, "hour"),
+    locale: {
+      format: "Y-M-DD",
+    },
+  });
+  handleTime();
+}
+
+// calculate total amount of data
 function totalData() {
   let data = table.columns().data();
   let summery = document.getElementsByClassName("summeryData");
-  console.log(console.log(table.column(0).data()));
 
   for (let i = 0; i < data.length; i++) {
     let res = 0;
@@ -611,19 +591,16 @@ function totalData() {
       }
     }
 
-    // let string = res.replace(/(...?)/g, "$1,").slice(0, -1);
-    // if (string.slice(-1) === ",") {
-    //   let correctStr = string.slice(0, -1);
-    //   summery[i].innerHTML = `Total Data: ${correctStr}`;
-    // } else {
-    //   summery[i].innerHTML = `Total Data: ${string}`;
-    // }
-
     summery[i].innerHTML = "Total Data: " + res;
     if (summery[i].innerHTML === "Total Data: 0") {
       summery[i].innerHTML = "Total Data: No Data";
     }
   }
+}
+
+function styleDate() {
+  let header = document.getElementsByClassName("searchHeader");
+  console.log(header);
 }
 
 //make header fixed on top
@@ -637,10 +614,10 @@ function fixedHeader() {
   $(tableWrapper).bind("scroll", function () {
     let offset = $(this).scrollTop();
     if (offset >= table.offsetTop) {
-      let position = offset - 12;
+      let position = offset;
       tHead[0].style.cssText = "transform: translateY(" + position + "px)";
     } else if (offset < table.offsetTop) {
-      tHead[0].style.cssText = "transform: translateY(-12px)";
+      tHead[0].style.cssText = "transform: translateY(0)";
     }
   });
 }

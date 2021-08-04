@@ -40,7 +40,7 @@ input[type="text"] {
   margin: 0.5rem 0;
 }
 form {
-  min-width: 200px;
+  min-width: 160px;
 }
 
 label {
@@ -101,6 +101,9 @@ thead:first-child {
   padding: 5px;
   box-shadow: black 0 0 10px;
   outline: none;
+}
+.searchHeader {
+  align-items: center;
 }
 .paginate_button {
   background-color: #ffffff;
@@ -188,6 +191,25 @@ thead:first-child {
   box-shadow: black 0 0 10px;
   outline: none;
 }
+.dateContainer {
+  display: flex;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+}
+.dateContainer label p {
+  margin: 0;
+  text-align: center;
+  color: white;
+  font-family: "mrgvlovani";
+}
+.dateContainer label input {
+  border-radius: 10px;
+  border: 1px solid#f1b81c;
+  outline: none;
+  box-shadow: black 0 0 10px;
+  font-family: "mrgvlovani";
+}
 .dataTables_wrapper {
   width: 100%;
   overflow: scroll;
@@ -221,10 +243,20 @@ thead:first-child {
 .hiddenDataTd {
   position: relative;
 }
+.table-condensed tbody {
+  position: unset;
+}
+.table-condensed {
+  margin: unset;
+}
 .dataTables_filter label {
   flex-flow: unset;
   align-items: center;
   color: #ffffff;
+}
+.table-condensed tbody tr:first-child {
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
 }
 table {
   margin: 5rem 0 0 !important;
@@ -254,7 +286,6 @@ thead {
   top: 44px; */
   z-index: 999;
   background-color: white;
-  transform: translateY(-12px);
 }
 
 tbody {
