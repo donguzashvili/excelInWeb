@@ -287,6 +287,9 @@ thead {
   z-index: 999;
   background-color: white;
 }
+select {
+  outline: none;
+}
 
 tbody {
   position: relative;

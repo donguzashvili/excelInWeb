@@ -7,7 +7,7 @@ let id = 15;
 let table = null;
 let nameArray = [];
 let searchObj = {};
-
+let storedData = {};
 let fetchFix = {
   tr: 0,
 };
@@ -120,7 +120,6 @@ function renderCustomer(array) {
       },
     ],
   });
-  console.log(array);
 
   //html
   $("#myTable thead th").each(function () {
@@ -153,22 +152,19 @@ function renderCustomer(array) {
     );
     tHeadID++;
   });
-
+  makeCheckboxes();
   styleHtml();
   contentLength();
   syleMainSearch();
   calcVisibleData();
 }
 
-// //toggle checkbox container
+//toggle checkbox container
 const handleCheckBox = (e) => {
   e.stopPropagation();
-  columnNum = e.target.id;
-  regex = "";
-  search = [];
-  selectSearch(e);
-
+  let containerPos = e.target.parentNode.nextElementSibling;
   e.target.parentNode.parentNode.children[1].classList.toggle("open");
+  containerPos.scrollTop = 0;
 };
 
 // //give main search placeholder
@@ -204,86 +200,113 @@ function contentLength() {
 }
 
 //make checkboxs for select
-function selectSearch(e) {
-  const columnsData = table.columns().data();
-  const checkboxes = $(".checkboxesContainer");
-  let ID = e.target.id;
-  let uniqueData;
-  //make them unique
-  uniqueData = columnsData[ID].filter((v, i, a) => a.indexOf(v) === i);
-  //sort them
-  sortedData = uniqueData.sort((a, b) => {
-    return a - b;
+function makeCheckboxes() {
+  const select = $(".overSelect");
+  // let checkboxContainer = select.parentNode.nextElementSibling.children[1];
+  let data = table.columns().data();
+  select.each(function () {
+    let container = this.parentNode.nextElementSibling.children[1];
+    let ID = this.id;
+    let handledData = handleSortAndUnique(data[ID]);
+    let checkedInputs = "";
+    for (let i = 0; i < handledData.length; i++) {
+      if (handledData[i] !== null && handledData[i] !== "") {
+        checkedInputs += ` <label for=${id++}>
+                      <input onclick="checkboxSearch(event)" type="checkbox" id= ${
+                        id++ - 1
+                      } value= ${handledData[i]} />
+                   <p className="checkboxData">    ${handledData[i]}</p>
+                      </label>`;
+      }
+    }
+    // let containerPos = e.target.parentNode.nextElementSibling;
+    // let containerPos = this.parentNode.nextElementSibling;
+    // console.log(containerPos);
+    // containerPos.scrollTop = 0;
+
+    container.innerHTML = checkedInputs;
   });
-  let checkedInputs = "";
-  for (let i = 0; i < sortedData.length; i++) {
-    checkedInputs += ` <label for=${id++}>
-                        <input type="checkbox" id= ${id++ - 1} value= ${
-      sortedData[i]
-    } />
-                     <p className="checkboxData">    ${sortedData[i]}</p>
-                        </label>`;
-  }
-  checkboxes[ID].innerHTML = checkedInputs;
-
-  //when checkbox clicked search for value data on each column
-  checkboxSearch();
-
-  //make checkbox containers relative to children to handle overflow
-  widthRelative(e);
 }
 
 //search for checkbox values
-function checkboxSearch() {
-  const checkBox = $("input[type = checkbox]");
-  checkBox.each(function () {
-    $(this).on("keyup change", function (e) {
-      columnId =
-        e.target.parentNode.parentNode.parentNode.previousElementSibling
-          .children[1].id;
+function checkboxSearch(e) {
+  columnId =
+    e.target.parentNode.parentNode.parentNode.previousElementSibling.children[1]
+      .id;
+  let container = e.target.parentNode.parentNode;
+  let child = e.target.parentNode;
+  let value = e.target.nextElementSibling.innerHTML.trim();
+  let selectValue =
+    container.parentNode.previousElementSibling.children[0].children[0];
+  if (e.target.checked) {
+    container.prepend(child);
 
-      if (this.checked) {
-        let container = e.target.parentNode.parentNode;
-        let child = e.target.parentNode;
-        container.prepend(child);
-        let value = this.nextElementSibling.innerHTML.trim();
-        let selectValue =
-          container.parentNode.previousElementSibling.children[0].children[0];
-        if (selectValue.innerHTML === " ") {
-          selectValue.innerHTML = value;
-        } else {
-          selectValue.innerHTML += ", " + value;
-        }
+    if (selectValue.innerHTML === " ") {
+      selectValue.innerHTML = value;
+    } else {
+      selectValue.innerHTML += ", " + value;
+    }
 
-        let regex = checkedState(value);
+    let regex = checkedState(value);
 
-        table.column(columnId).every(function () {
-          console.log("kolonis nomeri: " + columnId);
-          console.log("regexi dzebnis dros: " + regex);
-          const column = this;
-          column.search(regex, true, true).draw();
-        });
-        calcVisibleData();
-
-        //if unchecked box
-      } else if (!this.checked) {
-        let value = this.nextElementSibling.innerHTML;
-
-        value = checkString(value);
-
-        let regex = uncheckedState(value);
-
-        table.column(columnId).every(function () {
-          const column = this;
-          column.search(regex === undefined ? " " : regex, true, true).draw();
-        });
-        calcVisibleData();
-      }
+    table.column(columnId).every(function () {
+      console.log("kolonis nomeri: " + columnId);
+      console.log("regexi dzebnis dros: " + regex);
+      const column = this;
+      column.search(regex, true, true).draw();
     });
-  });
-}
+    calcVisibleData();
 
+    //if unchecked box
+  } else if (!e.target.checked) {
+    let value = e.target.nextElementSibling.innerHTML;
+    let val = value.trim();
+    let index = selectValue.innerHTML.search(`${val},`);
+    handleSelectInnerHtml(index, value, selectValue);
+
+    value = checkString(value);
+
+    let regex = uncheckedState(value);
+
+    table.column(0).every(function () {
+      console.log(columnId);
+      console.log("regexi: " + regex);
+      const column = this;
+      column.search(regex === undefined ? " " : regex, true, true).draw();
+    });
+    calcVisibleData();
+  }
+}
+function handleSelectInnerHtml(index, value, selectValue) {
+  if (index != -1) {
+    let firstSlice = selectValue.innerHTML.slice(0, index);
+    let secondSlice = selectValue.innerHTML.slice(
+      index + value.length,
+      selectValue.length
+    );
+    selectValue.innerHTML = firstSlice + secondSlice;
+  } else {
+    index = selectValue.innerHTML.search(value.trim());
+    if (index + value.length === selectValue.innerHTML.length) {
+      let firstSlice = selectValue.innerHTML.slice(0, index - 2);
+      let secondSlice = selectValue.innerHTML.slice(
+        index + value.length,
+        selectValue.length
+      );
+      selectValue.innerHTML = firstSlice + secondSlice;
+    }
+    let firstSlice = selectValue.innerHTML.slice(0, index);
+    let secondSlice = selectValue.innerHTML.slice(
+      index + value.length,
+      selectValue.length
+    );
+    selectValue.innerHTML = firstSlice + secondSlice;
+  }
+}
 function uncheckedState(value) {
+  searchArr = [];
+  searchArr = localStorage.getItem("searchData").split(",");
+
   for (let i = 0; i < searchArr.length; i++) {
     if (
       searchArr[i].includes(`^${value}`) ||
@@ -292,21 +315,18 @@ function uncheckedState(value) {
       searchArr.splice(i, 1);
     }
   }
-
   if (searchArr.length >= 1) {
     if (searchArr[0].startsWith("|")) {
       let firstChar = searchArr[0].slice(1);
       searchArr[0] = firstChar;
     }
-
-    regex = " ";
-
-    for (let i = 0; i < searchArr.length; i++) {
-      regex += searchArr[i];
-    }
-
-    return regex;
   }
+  localStorage.setItem("searchData", searchArr);
+  regex = " ";
+
+  regex = localStorage.getItem("searchData").split(",").join("");
+
+  return regex;
 }
 
 function checkedState(value) {
@@ -316,44 +336,19 @@ function checkedState(value) {
   //if this is not first data in array
   if (searchArr.length >= 1) {
     searchArr.push(`|^${value}`);
+    localStorage.setItem("searchData", searchArr);
   } else {
     searchArr.push(`^${value}`);
+    localStorage.setItem("searchData", searchArr);
   }
-
-  // createSearchObjects(value, columnId);
 
   let regex = "";
-  //open array and push items in string
-  for (let i = 0; i < searchArr.length; i++) {
-    // for (let key in searchArr[i]) {
-    // columnId = key;
-    regex += searchArr[i];
-    // }
-  }
+
+  regex = localStorage.getItem("searchData").split(",").join("");
+
   return regex;
 
   //when search finished and all elements are on table calculate new data
-}
-
-function createSearchObjects(value, columnId) {
-  let created;
-  if (searchArr.length > 0) {
-    for (let i = 0; i < searchArr.length; i++) {
-      for (let key in searchArr[i]) {
-        if (key === columnId && created !== true) {
-          created = false;
-          searchArr[i][key] += `|^${value}`;
-          break;
-        } else if (key !== columnId) {
-          created = true;
-          searchArr.push({ [columnId]: `^${value}` });
-        }
-        break;
-      }
-    }
-  } else {
-    searchArr.push({ [columnId]: `^${value}` });
-  }
 }
 
 // prepare strings for search
@@ -365,16 +360,11 @@ function checkString(value) {
 
 //make parents container childrens relative
 function widthRelative(e) {
-  // let selectBox = document.getElementsByTagName("select");
-
-  e.target.parentNode.nextElementSibling.children[1].children;
-  console.log(this.sortedData.length);
-  e.target.parentNode.style.width = length * 10 + "px";
-  // console.log(some);
   // let length = Math.max.apply(
   //   Math,
-  //   childrenArray.map((el) => el.length)
+  //   this.sortedData.map((el) => (el ? el.length : 0))
   // );
+  // e.target.parentNode.style.width = length * 11.5 + "px";
 }
 
 // calculate Current Data
@@ -415,20 +405,10 @@ function calcVisibleData() {
   for (let i = 0; i < container.length; i++) {
     if (container[i].innerHTML === "") {
       container[i].innerHTML = `Current Data: No Data`;
-    } else if (container[i].innerHTML === "Current Data: No Data") {
-      container[i].innerHTML === "Current Data: No Data";
-    } else if (container[i].innerHTML === "Current Data: 0") {
-      container[i].innerHTML === "Current Data: No Data";
-    } else {
-      //dasamtavrebelia
-      let reversedStr = container[i].innerHTML.split("").reverse().join("");
-      let originalString = reversedStr.split("").reverse().join("");
-      if (originalString.slice(-1) === ",") {
-        let correctStr = string.slice(0, -1);
-        container[i].innerHTML = `Current Data: ${correctStr}`;
-      } else {
-        container[i].innerHTML = `Current Data: ${originalString}`;
-      }
+    } else if (container[i].innerHTML) {
+      container[i].innerHTML = `Current Data: ${makeNumbersSeeEasy(
+        container[i].innerHTML
+      )}`;
     }
   }
 
@@ -438,6 +418,18 @@ function calcVisibleData() {
     paginateButton[i].addEventListener("click", () => {
       calcVisibleData();
     });
+  }
+}
+function makeNumbersSeeEasy(value) {
+  let reversedStr = value.split("").reverse().join("");
+  reversedStr = reversedStr.replace(/(...?)/g, "$1,");
+  let originalString = reversedStr.split("").reverse().join("");
+
+  if (originalString.charAt(0) === ",") {
+    let correctStr = originalString.substring(1);
+    return correctStr;
+  } else {
+    return originalString;
   }
 }
 
@@ -453,6 +445,7 @@ function individualSearch() {
   $(".indSearch").on("input", function (e) {
     columnId = e.target.parentNode.parentNode.children[0].children[1].id;
     let container = e.target.parentNode.children[1];
+
     let newValue = this.value;
     searchData(columnId, container, newValue);
   });
@@ -460,34 +453,46 @@ function individualSearch() {
 
 //search for checkboxes pt2
 function searchData(id, container, value) {
-  let data = table.column(id).data();
+  let data = table.columns().data();
   let checkedInputs = "";
-  let uniqueData = data.filter((v, i, a) => a.indexOf(v) === i);
-  let sortedData = uniqueData.sort((a, b) => {
-    return a - b;
-  });
-  console.log(sortedData);
-  sortedData.map((item) => {
-    if (
-      (item !== "" && item.startsWith(value.toUpperCase())) ||
-      item.startsWith(value)
-    ) {
-      checkedInputs += ` <label for=${id++}>
-                        <input type="checkbox" id= ${id++ - 1} value= ${item} />
-                        <p className="checkboxData">
-                        ${item}</p>
-
-                        </label>`;
-    } else if (value === "") {
-      checkedInputs += ` <label for=${id++}>
-                        <input type="checkbox" id= ${id++ - 1} value= ${item} />
-                        <p className="checkboxData">
-                        ${item}</p>
-                        </label>`;
+  let sortedData = handleSortAndUnique(data[id]);
+  let element = container.children;
+  let input = container.parentNode.children[0];
+  for (let i = 0; i < container.children.length; i++) {
+    if (element[i].children[0].value.startsWith(value)) {
+      container.innerHTML = element[i].outerHTML;
     }
-  });
-  container.innerHTML = checkedInputs;
+  }
+  if (input.value.length < 1) {
+    container.innerHTML = storedData[id];
+  }
+  // for (let i = 0; i < sortedData.length; i++) {
+  //   if (typeof sortedData[i] !== "object") {
+  //     if (
+  //       (sortedData[i] !== null &&
+  //         sortedData[i].toString().startsWith(value.toUpperCase())) ||
+  //       sortedData[i].toString().startsWith(value)
+  //     ) {
+  //       checkedInputs += ` <label for=${id++}>
+  //                       <input type="checkbox" id= ${id++ - 1} value= ${
+  //         sortedData[i]
+  //       } />
+  //                       <p className="checkboxData">
+  //                       ${sortedData[i]}</p>
+  //                       </label>`;
+  //     } else if (value === "") {
+  //       checkedInputs += ` <label for=${id++}>
+  //                       <input type="checkbox" id= ${id++ - 1} value= ${
+  //         sortedData[i]
+  //       } />
+  //                       <p className="checkboxData">
+  //                       ${sortedData[i]}</p>
+  //                       </label>`;
+  //     }
+  //   }
+  // }
 }
+
 //styiling html
 function styleHtml() {
   //create footer and header
@@ -514,6 +519,7 @@ function styleHtml() {
   document.body.append(footer);
   fixedHeader();
   datePicker();
+  // selectSearch();
 }
 
 function summeryData() {
@@ -590,9 +596,10 @@ function totalData() {
         }
       }
     }
-
-    summery[i].innerHTML = "Total Data: " + res;
-    if (summery[i].innerHTML === "Total Data: 0") {
+    if (res !== 0) {
+      let toString = res.toString();
+      summery[i].innerHTML = `Total Data: ${makeNumbersSeeEasy(toString)}`;
+    } else {
       summery[i].innerHTML = "Total Data: No Data";
     }
   }
@@ -620,6 +627,37 @@ function fixedHeader() {
       tHead[0].style.cssText = "transform: translateY(0)";
     }
   });
+}
+
+function handleSortAndUnique(arr) {
+  let unique = [...new Set(arr)];
+  unique = sortArray(unique);
+
+  return unique;
+}
+function sortArray(arr) {
+  // Finding the length of array 'arr'
+  let length = arr.length;
+
+  // Sorting using a single loop
+  for (let j = 0; j < length - 1; j++) {
+    // Checking the condition for two
+    // simultaneous elements of the array
+    if (arr[j] > arr[j + 1]) {
+      // Swapping the elements.
+      let temp = arr[j];
+      arr[j] = arr[j + 1];
+      arr[j + 1] = temp;
+
+      // updating the value of j = -1
+      // so after getting updated for j++
+      // in the loop it becomes 0 and
+      // the loop begins from the start.
+      j = -1;
+    }
+  }
+
+  return arr;
 }
 
 document.addEventListener("DOMContentLoaded", () => fetchData(URL));
