@@ -1,12 +1,27 @@
 const URL = "http://192.168.48.11:8000/api/api.php";
 const dataArray = [];
 let searchArr = [];
+let closeWindow = false;
 let regex = "";
 let columnNum = 0;
 let id = 15;
 let table = null;
 let nameArray = [];
-let searchObj = {};
+let searchObj = {
+  0: [],
+  1: [],
+  2: [],
+  3: [],
+  4: [],
+  5: [],
+  6: [],
+  7: [],
+  8: [],
+  9: [],
+  10: [],
+  11: [],
+  12: [],
+};
 let storedData = {};
 let fetchFix = {
   tr: 0,
@@ -45,16 +60,19 @@ function fetchData() {
 
 function handleTime() {
   let applyTimeBtn = document.getElementsByClassName("applyBtn")[0];
-  console.log(applyTimeBtn);
   applyTimeBtn.addEventListener("click", () => {
     let box = document.getElementsByClassName("drp-selected")[0];
     obj.start_date = box.innerHTML.split(" ")[0];
     localStorage.setItem("startDate", obj.start_date);
     obj.end_date = box.innerHTML.split(" ")[2];
     localStorage.setItem("endDate", obj.end_date);
+    const date = document.getElementById("date");
 
     location.reload();
   });
+  date.value = `${localStorage.getItem("startDate")} - ${localStorage.getItem(
+    "endDate"
+  )}`;
 }
 let tHeadID = 0;
 
@@ -70,16 +88,8 @@ function renderCustomer(array) {
     },
     columns: [
       {
-        data: "n",
-        title: "№",
-      },
-      {
         data: "code",
         title: "Code",
-      },
-      {
-        data: "date",
-        title: "Date",
       },
       {
         data: "doc_type",
@@ -143,7 +153,14 @@ function renderCustomer(array) {
         ' class="overSelect"  onclick="handleCheckBox(event)"></div>' +
         "    </div>" +
         '    <div class="checkboxes">' +
+        `<div class="searchBoxes">` +
         `<input type=text class="indSearch" placeholder="search by ${title}" oninput=individualSearch()>` +
+        ` <label for=${id++}>` +
+        `<input onclick="toggle(event,this)" id=${id++ - 1} ` +
+        `type="checkbox" value="selectAll" />
+        <p className="checkboxData">Select/Unselect All</p>
+        </label>` +
+        `</div>` +
         '<div class="checkboxesContainer"></div>' +
         "    </div>\n" +
         "  </div>\n" +
@@ -173,19 +190,40 @@ function syleMainSearch() {
     document.getElementById("myTable_filter").children[0].children[0];
   searchInput.setAttribute("placeholder", "Search for any data");
 }
+function cropTD() {
+  const td = document.getElementsByTagName("td");
+  for (let i = 0; i < td.length; i++) {
+    if (td[i].innerHTML && td[i].innerHTML.length > 20) {
+      // console.log(document.getElementById("myTable_wrapper").scrollTop);
+      // console.log(td[i].offsetTop);
+      td[i].classList.add("hiddenDataTd");
+      let hiddenData = td[i].innerHTML;
+      let newTd = `${td[i].innerHTML.substring(0, 20)}...`;
+      td[i].innerHTML = newTd;
+      let span = document.createElement("span");
+      span.classList.add("fullData");
+      td[i].appendChild(span);
+      span.innerHTML = hiddenData;
+    }
+  }
+}
 
 //close select boxes when clicked on window
 window.addEventListener("click", () => {
   let open = document.getElementsByClassName("checkboxes");
-
   for (let i = 0; i < open.length; i++) {
-    open[i].addEventListener("click", function (e) {
+    open[i].addEventListener("click", (e) => {
       e.stopPropagation();
     });
-    if (open[i].classList.contains("open")) {
+  }
+
+  for (let i = 0; i < open.length; i++) {
+    if (open[i].classList.contains("open") && closeWindow === true) {
+      console.log("shevida");
       open[i].classList.remove("open");
     }
   }
+  closeWindow = true;
 });
 
 // //when select or input changes calculate new Current Data
@@ -204,6 +242,7 @@ function makeCheckboxes() {
   const select = $(".overSelect");
   // let checkboxContainer = select.parentNode.nextElementSibling.children[1];
   let data = table.columns().data();
+  let name = 0;
   select.each(function () {
     let container = this.parentNode.nextElementSibling.children[1];
     let ID = this.id;
@@ -212,24 +251,33 @@ function makeCheckboxes() {
     for (let i = 0; i < handledData.length; i++) {
       if (handledData[i] !== null && handledData[i] !== "") {
         checkedInputs += ` <label for=${id++}>
-                      <input onclick="checkboxSearch(event)" type="checkbox" id= ${
-                        id++ - 1
-                      } value= ${handledData[i]} />
+                      <input onclick="checkboxSearch(event)" type="checkbox" name=${name}  id= ${
+          id++ - 1
+        } value= ${handledData[i]} />
                    <p className="checkboxData">    ${handledData[i]}</p>
                       </label>`;
       }
     }
-    // let containerPos = e.target.parentNode.nextElementSibling;
-    // let containerPos = this.parentNode.nextElementSibling;
-    // console.log(containerPos);
-    // containerPos.scrollTop = 0;
-
+    storedData[ID] = [checkedInputs];
     container.innerHTML = checkedInputs;
+    name++;
   });
+}
+
+function toggle(e, source) {
+  let id =
+    e.target.parentNode.parentNode.parentNode.previousElementSibling.children[1]
+      .id;
+  let checkboxes = document.getElementsByName(id);
+  for (let i = 0; i < checkboxes.length; i++) {
+    checkboxes[i].checked = !source.checked;
+    checkboxes[i].click();
+  }
 }
 
 //search for checkbox values
 function checkboxSearch(e) {
+  // try {
   columnId =
     e.target.parentNode.parentNode.parentNode.previousElementSibling.children[1]
       .id;
@@ -240,14 +288,13 @@ function checkboxSearch(e) {
     container.parentNode.previousElementSibling.children[0].children[0];
   if (e.target.checked) {
     container.prepend(child);
+    // if (selectValue.innerHTML === " ") {
+    //   selectValue.innerHTML = value;
+    // } else {
+    //   selectValue.innerHTML += ", " + value;
+    // }
 
-    if (selectValue.innerHTML === " ") {
-      selectValue.innerHTML = value;
-    } else {
-      selectValue.innerHTML += ", " + value;
-    }
-
-    let regex = checkedState(value);
+    let regex = checkedState(value, columnId);
 
     table.column(columnId).every(function () {
       console.log("kolonis nomeri: " + columnId);
@@ -260,91 +307,103 @@ function checkboxSearch(e) {
     //if unchecked box
   } else if (!e.target.checked) {
     let value = e.target.nextElementSibling.innerHTML;
-    let val = value.trim();
-    let index = selectValue.innerHTML.search(`${val},`);
-    handleSelectInnerHtml(index, value, selectValue);
+    // let val = value.trim();
+    // let index = selectValue.innerHTML.search(`${val},`);
+    // handleSelectInnerHtml(index, value, selectValue);
 
     value = checkString(value);
+    id =
+      e.target.parentNode.parentNode.parentNode.previousElementSibling
+        .children[1].id;
+    let regex = uncheckedState(value, id);
 
-    let regex = uncheckedState(value);
-
-    table.column(0).every(function () {
-      console.log(columnId);
-      console.log("regexi: " + regex);
+    table.column(id).every(function () {
+      console.log("regex Unchecked: " + regex);
       const column = this;
       column.search(regex === undefined ? " " : regex, true, true).draw();
     });
     calcVisibleData();
   }
+  // } catch (err) {
+  //   console.log(err);
+  // }
 }
-function handleSelectInnerHtml(index, value, selectValue) {
-  if (index != -1) {
-    let firstSlice = selectValue.innerHTML.slice(0, index);
-    let secondSlice = selectValue.innerHTML.slice(
-      index + value.length,
-      selectValue.length
-    );
-    selectValue.innerHTML = firstSlice + secondSlice;
-  } else {
-    index = selectValue.innerHTML.search(value.trim());
-    if (index + value.length === selectValue.innerHTML.length) {
-      let firstSlice = selectValue.innerHTML.slice(0, index - 2);
-      let secondSlice = selectValue.innerHTML.slice(
-        index + value.length,
-        selectValue.length
-      );
-      selectValue.innerHTML = firstSlice + secondSlice;
-    }
-    let firstSlice = selectValue.innerHTML.slice(0, index);
-    let secondSlice = selectValue.innerHTML.slice(
-      index + value.length,
-      selectValue.length
-    );
-    selectValue.innerHTML = firstSlice + secondSlice;
-  }
-}
-function uncheckedState(value) {
-  searchArr = [];
-  searchArr = localStorage.getItem("searchData").split(",");
+// function handleSelectInnerHtml(index, value, selectValue) {
+//   if (index != -1) {
+//     console.log("pirvelshi shevida");
+//     let firstSlice = selectValue.innerHTML.slice(0, index);
+//     let secondSlice = selectValue.innerHTML.slice(
+//       index + value.length,
+//       selectValue.length
+//     );
+//     selectValue.innerHTML = firstSlice + secondSlice;
+//   } else {
+//     index = selectValue.innerHTML.includes(value.trim());
+//     if (index + value.length === selectValue.innerHTML.length) {
+//       console.log("mesameshi shevida");
+//       let firstSlice = selectValue.innerHTML.slice(0, index - 2);
+//       let secondSlice = selectValue.innerHTML.slice(
+//         index + value.length,
+//         selectValue.length
+//       );
+//       selectValue.innerHTML = firstSlice + secondSlice;
+//     } else {
+//       console.log("meoreshi shevida");
+//       let firstSlice = selectValue.innerHTML.slice(0, index - 1);
+//       let secondSlice = selectValue.innerHTML.slice(
+//         index - 1,
+//         selectValue.length
+//       );
+//       console.log("first " + firstSlice);
+//       console.log("second " + secondSlice);
 
-  for (let i = 0; i < searchArr.length; i++) {
+//       selectValue.innerHTML = firstSlice + secondSlice;
+//     }
+//   }
+//   console.log(index);
+// }
+function uncheckedState(value, id) {
+  let temp = localStorage.getItem("searchData");
+  let json = JSON.parse(temp);
+  searchObj = json;
+  for (let i = 0; i < json[id].length; i++) {
     if (
-      searchArr[i].includes(`^${value}`) ||
-      searchArr[i].includes(`|^${value}`)
+      json[id][i].includes(`^${value}`) ||
+      json[id][i].includes(`|^${value}`)
     ) {
-      searchArr.splice(i, 1);
+      json[id].splice(i, 1);
     }
   }
-  if (searchArr.length >= 1) {
-    if (searchArr[0].startsWith("|")) {
-      let firstChar = searchArr[0].slice(1);
-      searchArr[0] = firstChar;
-    }
-  }
-  localStorage.setItem("searchData", searchArr);
+  console.log(json[id]);
+
+  localStorage.setItem("searchData", JSON.stringify(searchObj));
   regex = " ";
 
-  regex = localStorage.getItem("searchData").split(",").join("");
+  if (json[id].length > 0) {
+    regex = "";
+    json[id].map((item) => {
+      regex += item;
+    });
+  }
 
   return regex;
 }
 
-function checkedState(value) {
+function checkedState(value, id) {
   //handle whitespaces and prepare them for search
   value = checkString(value);
-
   //if this is not first data in array
-  if (searchArr.length >= 1) {
-    searchArr.push(`|^${value}`);
-    localStorage.setItem("searchData", searchArr);
-  } else {
-    searchArr.push(`^${value}`);
-    localStorage.setItem("searchData", searchArr);
+  searchObj[id].push(`|^${value}`);
+  localStorage.setItem("searchData", JSON.stringify(searchObj));
+  console.log(searchObj);
+  if (searchObj[id].length > 0) {
+    regex = "";
+    searchObj[id].map((item) => {
+      regex += item;
+    });
   }
 
-  let regex = "";
-
-  regex = localStorage.getItem("searchData").split(",").join("");
+  regex = regex.slice(1, regex.length);
 
   return regex;
 
@@ -402,12 +461,13 @@ function calcVisibleData() {
       }
     }
   }
+
   for (let i = 0; i < container.length; i++) {
-    if (container[i].innerHTML === "") {
-      container[i].innerHTML = `Current Data: No Data`;
-    } else if (container[i].innerHTML) {
-      container[i].innerHTML = `Current Data: ${makeNumbersSeeEasy(
-        container[i].innerHTML
+    if (i !== 9) {
+      container[i].innerHTML = "Current Data: No Data";
+    } else {
+      container[9].innerHTML = `Current Data: ${makeNumbersSeeEasy(
+        container[9].innerHTML
       )}`;
     }
   }
@@ -419,6 +479,7 @@ function calcVisibleData() {
       calcVisibleData();
     });
   }
+  cropTD();
 }
 function makeNumbersSeeEasy(value) {
   let reversedStr = value.split("").reverse().join("");
@@ -444,7 +505,8 @@ function backToTop() {
 function individualSearch() {
   $(".indSearch").on("input", function (e) {
     columnId = e.target.parentNode.parentNode.children[0].children[1].id;
-    let container = e.target.parentNode.children[1];
+    let container = e.target.parentNode.nextElementSibling;
+    console.log(container);
 
     let newValue = this.value;
     searchData(columnId, container, newValue);
@@ -457,7 +519,9 @@ function searchData(id, container, value) {
   let checkedInputs = "";
   let sortedData = handleSortAndUnique(data[id]);
   let element = container.children;
-  let input = container.parentNode.children[0];
+  let input = container.previousElementSibling.children[0];
+  console.log(storedData);
+
   for (let i = 0; i < container.children.length; i++) {
     if (element[i].children[0].value.startsWith(value)) {
       container.innerHTML = element[i].outerHTML;
@@ -503,10 +567,6 @@ function styleHtml() {
   const dataTableFilter = document.getElementById("myTable_filter");
   const dataTablePaginate = document.getElementById("myTable_paginate");
   const dataTableInfo = document.getElementById("myTable_info");
-  summeryData();
-
-  //calculate total amount of data
-  totalData();
 
   //append elements to footer and header
   header.append(dataTableLength);
@@ -517,9 +577,43 @@ function styleHtml() {
   footer.append(dataTablePaginate);
   dataTableWrapper.prepend(header);
   document.body.append(footer);
+
+  let th = document.getElementsByTagName("th");
+  if (th) {
+    for (let i = 0; i < th.length; i++) {
+      th[i].addEventListener("click", cropTD);
+    }
+  }
+
+  //total data box
+  summeryData();
+
+  //calculate total amount of data
+  totalData();
+
+  //toggle checkbox
+  createCheckBox();
+
+  //make header fixed on top
   fixedHeader();
+
+  //create calendar
   datePicker();
   // selectSearch();
+}
+function createCheckBox() {
+  const th = document.getElementsByTagName("th");
+  for (let i = 0; i < th.length / 2; i++) {
+    let label = document.createElement("label");
+    let input = document.createElement("input");
+    let paragraph = document.createElement("p");
+    label.classList.add("toggleCheckbox");
+    label.appendChild(paragraph);
+    paragraph.innerHTML = "click here for checkboxes";
+    input.type = "checkbox";
+    th[i].appendChild(label);
+    label.appendChild(input);
+  }
 }
 
 function summeryData() {
@@ -531,7 +625,7 @@ function summeryData() {
   // const thLength = document.getElementsByTagName("th");
 
   //summery row
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 10; i++) {
     let th = document.createElement("th");
     th.classList.add("grandTotal");
     tr.appendChild(th);
@@ -616,15 +710,31 @@ function fixedHeader() {
   let table = document.getElementById("myTable");
   let tHead = document.getElementsByTagName("thead");
   let tableWrapper = document.getElementById("myTable_wrapper");
+  let td = document.getElementsByClassName("hiddenDataTd");
+  let container = document.getElementsByClassName("checkboxes");
 
   //on scroll move header with content like a position fixed
   $(tableWrapper).bind("scroll", function () {
     let offset = $(this).scrollTop();
     if (offset >= table.offsetTop) {
-      let position = offset;
-      tHead[0].style.cssText = "transform: translateY(" + position + "px)";
+      tHead[0].style.cssText = "transform: translateY(" + offset + "px)";
     } else if (offset < table.offsetTop) {
       tHead[0].style.cssText = "transform: translateY(0)";
+    }
+    for (let i = 0; i < td.length; i++) {
+      if (container[i].classList.contains("open")) {
+        if (offset + td[i].offsetTop >= td[i].offsetTop) {
+          td[i].style.cssText = "position: unset;";
+        } else {
+          td[i].style.cssText = "position: relative;";
+        }
+      } else {
+        if (offset + 252 >= td[i].offsetTop) {
+          td[i].style.cssText = "position: unset;";
+        } else {
+          td[i].style.cssText = "position: relative;";
+        }
+      }
     }
   });
 }
@@ -637,25 +747,25 @@ function handleSortAndUnique(arr) {
 }
 function sortArray(arr) {
   // Finding the length of array 'arr'
-  let length = arr.length;
-
+  // let length = arr.length;
+  arr.sort((a, b) => a - b);
   // Sorting using a single loop
-  for (let j = 0; j < length - 1; j++) {
-    // Checking the condition for two
-    // simultaneous elements of the array
-    if (arr[j] > arr[j + 1]) {
-      // Swapping the elements.
-      let temp = arr[j];
-      arr[j] = arr[j + 1];
-      arr[j + 1] = temp;
+  // for (let j = 0; j < length - 1; j++) {
+  //   // Checking the condition for two
+  //   // simultaneous elements of the array
+  //   if (arr[j] > arr[j + 1]) {
+  //     // Swapping the elements.
+  //     let temp = arr[j];
+  //     arr[j] = arr[j + 1];
+  //     arr[j + 1] = temp;
 
-      // updating the value of j = -1
-      // so after getting updated for j++
-      // in the loop it becomes 0 and
-      // the loop begins from the start.
-      j = -1;
-    }
-  }
+  //     // updating the value of j = -1
+  //     // so after getting updated for j++
+  //     // in the loop it becomes 0 and
+  //     // the loop begins from the start.
+  //     j = -1;
+  //   }
+  // }
 
   return arr;
 }

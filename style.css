@@ -141,7 +141,9 @@ thead:first-child {
 .open {
   display: block;
 }
-
+#myTable {
+  z-index: -1;
+}
 #myTable_info {
   color: #ffffff;
   font-family: "mtavruli";
@@ -226,8 +228,8 @@ thead:first-child {
   justify-content: space-between;
 }
 
-/* .fullData {
-  background-color: rgba(30, 68, 80, 0.7);
+.fullData {
+  background-color: rgba(54, 65, 80, 0.7);
   color: white;
   padding: 10px 7px;
   z-index: 3;
@@ -236,7 +238,7 @@ thead:first-child {
   top: -3px;
   border-radius: 10px;
   display: none;
-} */
+}
 .hiddenDataTd:hover .fullData {
   display: block !important;
 }
@@ -292,15 +294,30 @@ select {
 }
 
 tbody {
-  position: relative;
-  z-index: -1;
   box-shadow: black 0 0 30px;
 }
 td {
   min-width: 202px;
   font-family: "mrgvlovani";
 }
-
+/* .searchBoxes label {
+  display: flex;
+  justify-content: space-between;
+  flex-flow: row;
+  align-items: center;
+  padding: 4px 0.1rem;
+  cursor: pointer;
+  border-bottom: 1px solid white;
+} */
+.toggleCheckbox {
+  flex-flow: unset;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 10px;
+}
+.toggleCheckbox p {
+  margin: 0;
+}
 footer {
   position: fixed !important;
   background-color: #364150;
