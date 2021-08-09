@@ -26,6 +26,7 @@ let storedData = {};
 let fetchFix = {
   tr: 0,
 };
+let checkboxStatus = {};
 
 let obj = {};
 obj.start_date = "";
@@ -80,16 +81,18 @@ let tHeadID = 0;
 function renderCustomer(array) {
   table = $("#myTable").DataTable({
     pageLength: 100,
-    autoWidth: false,
     regex: true,
+    autoWidth: false,
     data: array,
     search: {
       smart: false,
     },
+
     columns: [
       {
         data: "code",
         title: "Code",
+        Width: "300px",
       },
       {
         data: "doc_type",
@@ -113,6 +116,10 @@ function renderCustomer(array) {
         title: "Pay Type",
       },
       {
+        data: "purpose",
+        title: "Purpose",
+      },
+      {
         data: "sector",
         title: "Sector",
       },
@@ -123,10 +130,6 @@ function renderCustomer(array) {
       {
         data: "waybill_num",
         title: "WayBill Num",
-      },
-      {
-        data: "purpose",
-        title: "Purpose",
       },
     ],
   });
@@ -161,6 +164,7 @@ function renderCustomer(array) {
         <p className="checkboxData">Select/Unselect All</p>
         </label>` +
         `</div>` +
+        `<div class="selectedContainer"></div>` +
         '<div class="checkboxesContainer"></div>' +
         "    </div>\n" +
         "  </div>\n" +
@@ -169,8 +173,8 @@ function renderCustomer(array) {
     );
     tHeadID++;
   });
-  makeCheckboxes();
   styleHtml();
+  makeCheckboxes();
   contentLength();
   syleMainSearch();
   calcVisibleData();
@@ -196,14 +200,17 @@ function cropTD() {
     if (td[i].innerHTML && td[i].innerHTML.length > 20) {
       // console.log(document.getElementById("myTable_wrapper").scrollTop);
       // console.log(td[i].offsetTop);
-      td[i].classList.add("hiddenDataTd");
-      let hiddenData = td[i].innerHTML;
-      let newTd = `${td[i].innerHTML.substring(0, 20)}...`;
-      td[i].innerHTML = newTd;
-      let span = document.createElement("span");
-      span.classList.add("fullData");
-      td[i].appendChild(span);
-      span.innerHTML = hiddenData;
+
+      if (td[i].childElementCount === 0) {
+        td[i].classList.add("hiddenDataTd");
+        let hiddenData = td[i].innerHTML;
+        let newTd = `${td[i].innerHTML.substring(0, 20)}...`;
+        td[i].innerHTML = newTd;
+        let span = document.createElement("span");
+        span.classList.add("fullData");
+        td[i].appendChild(span);
+        span.innerHTML = hiddenData;
+      }
     }
   }
 }
@@ -219,7 +226,6 @@ window.addEventListener("click", () => {
 
   for (let i = 0; i < open.length; i++) {
     if (open[i].classList.contains("open") && closeWindow === true) {
-      console.log("shevida");
       open[i].classList.remove("open");
     }
   }
@@ -239,13 +245,17 @@ function contentLength() {
 
 //make checkboxs for select
 function makeCheckboxes() {
-  const select = $(".overSelect");
-  // let checkboxContainer = select.parentNode.nextElementSibling.children[1];
-  let data = table.columns().data();
-  let name = 0;
-  select.each(function () {
-    let container = this.parentNode.nextElementSibling.children[1];
-    let ID = this.id;
+  const button = $(".checkboxBtn");
+  button.on("click", function (e) {
+    button.disabled = true;
+    const main = e.target.parentNode.children[0].children[1].children[0];
+    const ID = main.children[0].children[1].id;
+    const container = main.children[1].children[2];
+
+    checkboxStatus[ID] = true;
+
+    let data = table.columns().data();
+    let name = 0;
     let handledData = handleSortAndUnique(data[ID]);
     let checkedInputs = "";
     for (let i = 0; i < handledData.length; i++) {
@@ -258,7 +268,6 @@ function makeCheckboxes() {
                       </label>`;
       }
     }
-    storedData[ID] = [checkedInputs];
     container.innerHTML = checkedInputs;
     name++;
   });
@@ -281,11 +290,13 @@ function checkboxSearch(e) {
   columnId =
     e.target.parentNode.parentNode.parentNode.previousElementSibling.children[1]
       .id;
-  let container = e.target.parentNode.parentNode;
+  let container = e.target.parentNode.parentNode.previousElementSibling;
   let child = e.target.parentNode;
   let value = e.target.nextElementSibling.innerHTML.trim();
   let selectValue =
     container.parentNode.previousElementSibling.children[0].children[0];
+  console.log(child);
+  console.log(container);
   if (e.target.checked) {
     container.prepend(child);
     // if (selectValue.innerHTML === " ") {
@@ -307,9 +318,9 @@ function checkboxSearch(e) {
     //if unchecked box
   } else if (!e.target.checked) {
     let value = e.target.nextElementSibling.innerHTML;
-    // let val = value.trim();
-    // let index = selectValue.innerHTML.search(`${val},`);
-    // handleSelectInnerHtml(index, value, selectValue);
+    let element = e.target.parentNode;
+    let container = e.target.parentNode.parentNode.parentNode.children[2];
+    container.prepend(element);
 
     value = checkString(value);
     id =
@@ -463,11 +474,11 @@ function calcVisibleData() {
   }
 
   for (let i = 0; i < container.length; i++) {
-    if (i !== 9) {
+    if (i !== 8) {
       container[i].innerHTML = "Current Data: No Data";
     } else {
-      container[9].innerHTML = `Current Data: ${makeNumbersSeeEasy(
-        container[9].innerHTML
+      container[8].innerHTML = `Current Data: ${makeNumbersSeeEasy(
+        container[8].innerHTML
       )}`;
     }
   }
@@ -504,9 +515,9 @@ function backToTop() {
 // //search for checkboxes pt1
 function individualSearch() {
   $(".indSearch").on("input", function (e) {
-    columnId = e.target.parentNode.parentNode.children[0].children[1].id;
-    let container = e.target.parentNode.nextElementSibling;
-    console.log(container);
+    columnId =
+      e.target.parentNode.parentNode.previousElementSibling.children[1].id;
+    let container = e.target.parentNode.nextElementSibling.nextElementSibling;
 
     let newValue = this.value;
     searchData(columnId, container, newValue);
@@ -519,42 +530,28 @@ function searchData(id, container, value) {
   let checkedInputs = "";
   let sortedData = handleSortAndUnique(data[id]);
   let element = container.children;
-  let input = container.previousElementSibling.children[0];
-  console.log(storedData);
+  let input = container.parentNode.children[0].children[0];
+  let selectedValues = container.parentNode.children[1];
 
-  for (let i = 0; i < container.children.length; i++) {
-    if (element[i].children[0].value.startsWith(value)) {
-      container.innerHTML = element[i].outerHTML;
+  for (let i = 0; i < sortedData.length; i++) {
+    console.log(sortedData);
+    if (sortedData[i] && sortedData[i].startsWith(value)) {
+      checkedInputs += ` <label for=${id++}>
+                      <input onclick="checkboxSearch(event)" type="checkbox" name=${name}  id= ${
+        id++ - 1
+      } value= ${sortedData[i]} />
+                   <p className="checkboxData">    ${sortedData[i]}</p>
+                      </label>`;
+    } else if (sortedData[i] && sortedData[i].includes(value)) {
+      checkedInputs += ` <label for=${id++}>
+                      <input onclick="checkboxSearch(event)" type="checkbox" name=${name}  id= ${
+        id++ - 1
+      } value= ${sortedData[i]} />
+                   <p className="checkboxData">    ${sortedData[i]}</p>
+                      </label>`;
     }
   }
-  if (input.value.length < 1) {
-    container.innerHTML = storedData[id];
-  }
-  // for (let i = 0; i < sortedData.length; i++) {
-  //   if (typeof sortedData[i] !== "object") {
-  //     if (
-  //       (sortedData[i] !== null &&
-  //         sortedData[i].toString().startsWith(value.toUpperCase())) ||
-  //       sortedData[i].toString().startsWith(value)
-  //     ) {
-  //       checkedInputs += ` <label for=${id++}>
-  //                       <input type="checkbox" id= ${id++ - 1} value= ${
-  //         sortedData[i]
-  //       } />
-  //                       <p className="checkboxData">
-  //                       ${sortedData[i]}</p>
-  //                       </label>`;
-  //     } else if (value === "") {
-  //       checkedInputs += ` <label for=${id++}>
-  //                       <input type="checkbox" id= ${id++ - 1} value= ${
-  //         sortedData[i]
-  //       } />
-  //                       <p className="checkboxData">
-  //                       ${sortedData[i]}</p>
-  //                       </label>`;
-  //     }
-  //   }
-  // }
+  container.innerHTML = checkedInputs;
 }
 
 //styiling html
@@ -582,6 +579,7 @@ function styleHtml() {
   if (th) {
     for (let i = 0; i < th.length; i++) {
       th[i].addEventListener("click", cropTD);
+      th[i].addEventListener("click", calcVisibleData);
     }
   }
 
@@ -604,15 +602,10 @@ function styleHtml() {
 function createCheckBox() {
   const th = document.getElementsByTagName("th");
   for (let i = 0; i < th.length / 2; i++) {
-    let label = document.createElement("label");
-    let input = document.createElement("input");
-    let paragraph = document.createElement("p");
-    label.classList.add("toggleCheckbox");
-    label.appendChild(paragraph);
-    paragraph.innerHTML = "click here for checkboxes";
-    input.type = "checkbox";
-    th[i].appendChild(label);
-    label.appendChild(input);
+    let button = document.createElement("button");
+    button.innerHTML = "click here for checkboxes";
+    button.classList.add("checkboxBtn");
+    th[i].append(button);
   }
 }
 
@@ -710,9 +703,10 @@ function fixedHeader() {
   let table = document.getElementById("myTable");
   let tHead = document.getElementsByTagName("thead");
   let tableWrapper = document.getElementById("myTable_wrapper");
-  let td = document.getElementsByClassName("hiddenDataTd");
-  let container = document.getElementsByClassName("checkboxes");
-
+  // let td = document.getElementsByClassName("hiddenDataTd");
+  // let container = document.getElementsByClassName("checkboxes");
+  // let rect, counter;
+  // counter = 0;
   //on scroll move header with content like a position fixed
   $(tableWrapper).bind("scroll", function () {
     let offset = $(this).scrollTop();
@@ -721,21 +715,18 @@ function fixedHeader() {
     } else if (offset < table.offsetTop) {
       tHead[0].style.cssText = "transform: translateY(0)";
     }
-    for (let i = 0; i < td.length; i++) {
-      if (container[i].classList.contains("open")) {
-        if (offset + td[i].offsetTop >= td[i].offsetTop) {
-          td[i].style.cssText = "position: unset;";
-        } else {
-          td[i].style.cssText = "position: relative;";
-        }
-      } else {
-        if (offset + 252 >= td[i].offsetTop) {
-          td[i].style.cssText = "position: unset;";
-        } else {
-          td[i].style.cssText = "position: relative;";
-        }
-      }
-    }
+
+    // if (tableWrapper.scrollTop > 0) {
+    //   for (let i = 0; i < td.length; i++) {
+    //     let rect = td[i].getBoundingClientRect();
+    //     if (rect.bottom < 290) {
+    //       console.log(rect.bottom);
+    //       td[i].style.cssText = "position:unset;";
+    //     } else {
+    //       td[i].style.cssText = "position:relative;";
+    //     }
+    //   }
+    // }
   });
 }
 
