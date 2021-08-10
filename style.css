@@ -6,6 +6,10 @@
   font-family: "mtavruli";
   src: url(./fonts/bpg_nino_mtavruli_bold.ttf);
 }
+@font-face {
+  font-family: "sylfaen";
+  src: url("./fonts/bpg_glaho_sylfaen.ttf");
+}
 * {
   box-sizing: border-box;
 }
@@ -32,15 +36,12 @@ dataTables_wrapper {
 }
 
 p {
-  margin: 8px 0;
+  margin: 8px 5px;
   font-size: 13px;
 }
 
 input[type="text"] {
   margin: 0.5rem 0;
-}
-form {
-  min-width: 160px;
 }
 
 label {
@@ -59,8 +60,11 @@ label {
   height: 5rem;
 }
 
+.checkboxBtn {
+  display: none;
+}
 .multiselect {
-  width: 100%;
+  max-width: 200px;
   position: relative;
 }
 
@@ -70,7 +74,6 @@ label {
 .selectBox select {
   width: 100%;
   font-weight: bold;
-  min-width: 178px;
   border-radius: 10px;
   padding: 4px 0;
   border: #f1b81c 1px solid;
@@ -79,7 +82,7 @@ label {
 thead:first-child {
   background-color: #364150;
   color: #ffffff;
-  font-family: "mrgvlovani";
+  font-family: "sylfaen";
   box-shadow: black 0 0 10px;
 }
 
@@ -109,40 +112,47 @@ thead:first-child {
 .ellipsis {
   color: #ffffff !important;
 }
+tr:first-child th {
+  vertical-align: baseline;
+}
 
 .checkboxes {
-  display: none;
+  visibility: hidden;
   border: 1px #dadada solid;
-  position: absolute;
   width: 100%;
-  height: 21rem;
+  height: 0;
   overflow-y: scroll;
   background-color: #364150;
   z-index: 999;
   border-radius: 8px;
+  transition: all 0.5s linear;
 }
+
 .checkboxes label {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   flex-flow: row;
   align-items: center;
   padding: 4px 0.1rem;
   cursor: pointer;
   border-bottom: 1px solid white;
+  position: relative;
+  z-index: 9999;
 }
 .checkboxes label:hover {
   background-color: #1e90ff;
 }
 
 .open {
-  display: block;
+  visibility: visible;
+  height: 21rem;
 }
 #myTable {
   z-index: -1;
 }
 #myTable_info {
   color: #ffffff;
-  font-family: "mtavruli";
+  font-family: "sylfaen";
 }
 #myTable_previous {
   color: #000000 !important;
@@ -205,14 +215,14 @@ thead:first-child {
   margin: 0;
   text-align: center;
   color: white;
-  font-family: "mrgvlovani";
+  font-family: "sylfaen";
 }
 .dateContainer label input {
   border-radius: 10px;
   border: 1px solid#f1b81c;
   outline: none;
   box-shadow: black 0 0 10px;
-  font-family: "mrgvlovani";
+  font-family: "sylfaen";
 }
 .dataTables_wrapper {
   width: 100%;
@@ -245,8 +255,7 @@ th button {
   background-color: rgba(54, 65, 80, 0.7);
   color: white;
   padding: 10px 7px;
-  z-index: 3;
-  position: relative;
+  position: absolute;
   transition: all 0.5s linear;
   display: block;
   border-radius: 10px;
@@ -255,6 +264,7 @@ th button {
 .hiddenDataTd:hover .fullData {
   opacity: 1;
   transition: all 0.5s linear;
+  transition-delay: 2s;
 }
 
 .table-condensed tbody {
@@ -285,19 +295,7 @@ table {
   padding: 5px !important;
 }
 
-/* #header-fixed { 
-  position: fixed; 
-  top: 0px; 
-  display:none;
-  background-color:white;
-}
-#header-fixed thead{
-  position: relative;
-    top: -9px;
-} */
 thead {
-  /* position: fixed;
-  top: 44px; */
   z-index: 999;
   background-color: white;
 }
@@ -309,18 +307,10 @@ tbody {
   box-shadow: black 0 0 30px;
 }
 td {
-  min-width: 202px;
-  font-family: "mrgvlovani";
+  font-size: 15px;
+  font-family: "sylfaen";
 }
-/* .searchBoxes label {
-  display: flex;
-  justify-content: space-between;
-  flex-flow: row;
-  align-items: center;
-  padding: 4px 0.1rem;
-  cursor: pointer;
-  border-bottom: 1px solid white;
-} */
+
 .toggleCheckbox {
   flex-flow: unset;
   align-items: center;
@@ -353,4 +343,9 @@ footer {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgb(70, 57, 57);
+}
+@media screen and (max-width: 769px) {
+  #myTable_wrapper {
+    max-height: 90vh;
+  }
 }
